@@ -192,22 +192,22 @@ function renderSaved(){
         // Edit mode: group headers (editable), cards with ✕/⇄, split buttons between groups
         const ng=normalizeGroups(s.cards,s.groups||[]);
         let inner='';let cardPos=0;
+        const mkSvCard=(ci,p)=>{const c=CARDS[ci];return `<div class="sv-card sv-card-edit" draggable="true" ondragstart="svDragStart(event,'${s.id}',${p})" ondragend="svDragEnd(event)" ondragover="svDragOver(event)" ondragleave="svDragLeave(event)" ondrop="svDrop(event,'${s.id}',${p})"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div>`;};
         if(!ng.length){
           // No groups — show add-label button at top, then all cards
-          inner+=`<div class="sv-add-label-tile sv-add-label-top"><button class="sv-add-label-btn" onclick="svAddGroup('${s.id}',${s.cards.length-1})">＋ Додати мітку до всіх карт</button></div>`;
-          inner+=s.cards.map((ci,p)=>{const c=CARDS[ci];const canSplit=p<s.cards.length-1;return `<div class="sv-card sv-card-edit"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button>${canSplit?`<button class="sv-ca-sp" title="Новий розділ після цієї карти" onclick="svAddGroup('${s.id}',${p})">÷</button>`:''}</div></div>`;}).join('');
+          inner+=`<div class="sv-add-label-tile sv-add-label-top"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Додати мітку</button></div>`;
+          inner+=s.cards.map((ci,p)=>mkSvCard(ci,p)).join('');
         } else {
           for(let gi=0;gi<ng.length;gi++){
             const g=ng[gi];const gStart=cardPos;
-            inner+=`<div class="sv-group-header" data-start="${gStart}"><input class="sv-group-input" data-id="${s.id}" data-start="${gStart}" maxlength="80" oninput="svRenameGroup('${s.id}',${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва питання..."><button class="sv-group-del" title="Видалити мітку" onclick="svRemoveGroup('${s.id}',${gStart})">✕</button></div>`;
+            // Group header — also a drop target
+            inner+=`<div class="sv-group-header sv-group-droptarget" data-start="${gStart}" ondragover="svDragOver(event)" ondragleave="svDragLeave(event)" ondrop="svDropGroup(event,'${s.id}',${gi})"><input class="sv-group-input" data-id="${s.id}" data-start="${gStart}" maxlength="80" oninput="svRenameGroup('${s.id}',${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..."><button class="sv-group-del" title="Видалити мітку" onclick="svRemoveGroup('${s.id}',${gStart})">✕</button></div>`;
             for(let j=0;j<g.count;j++){
-              const ci=s.cards[cardPos];const c=CARDS[ci];const p=cardPos;
-              const isLastInGroup=(j===g.count-1);
-              const splitBtn=(ng.length>0&&!isLastInGroup||ng.length>1&&isLastInGroup&&gi<ng.length-1)?'':`<button class="sv-ca-sp" title="Розбити тут" onclick="svAddGroup('${s.id}',${p})">÷</button>`;
-              const canSplit=p<s.cards.length-1;
-              inner+=`<div class="sv-card sv-card-edit"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button>${canSplit?`<button class="sv-ca-sp" title="Новий розділ після цієї карти" onclick="svAddGroup('${s.id}',${p})">÷</button>`:''}</div></div>`;
+              inner+=mkSvCard(s.cards[cardPos],cardPos);
               cardPos++;
             }
+            // "Add new label" after each group
+            inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
           }
         }
         inner+=`<div class="sv-add-tile"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${s.cards.length})">＋</button></div>`;
@@ -391,20 +391,36 @@ function removeS(i){
 function clearSpread(){spread=[];spreadGroups=[];updCount();renderCatalog();renderSpread();}
 
 // ── GROUP/LABEL HELPERS ───────────────────────────────────────────────────────
-// Normalize groups so their counts sum exactly to cards.length, no negatives
+// Normalize groups so their counts sum exactly to cards.length, no negatives.
+// Empty groups (count=0) are kept if they have a label (they're drop targets).
 function normalizeGroups(cards, groups){
-  if(!groups||!groups.length||!cards.length)return[];
-  let total=cards.length,arr=[],rem=total;
-  for(let i=0;i<groups.length;i++){
-    const left=groups.length-i;
-    let cnt=Math.max(0,Math.min(groups[i].count||1,rem-(left-1)));
-    if(i===groups.length-1)cnt=rem;
-    if(cnt<=0)continue;
-    arr.push({label:groups[i].label||'',count:cnt});
-    rem-=cnt;
-    if(rem<=0)break;
+  if(!groups||!groups.length)return[];
+  if(!cards.length){
+    // No cards: keep only labeled groups as empty placeholders
+    return groups.filter(g=>g.label).map(g=>({label:g.label,count:0}));
   }
-  return arr;
+  // First pass: preserve labeled empty groups, distribute cards among the rest
+  // Strategy: labeled groups keep their count (clamped), unlabeled fill remaining
+  const result=groups.map(g=>({label:g.label||'',count:Math.max(0,g.count||0)}));
+  const total=cards.length;
+  const currentSum=result.reduce((s,g)=>s+g.count,0);
+  if(currentSum!==total){
+    // Adjust: add/remove cards from last non-empty group or last group
+    const diff=total-currentSum;
+    if(diff>0){
+      // Need to add cards — put them in last group
+      if(result.length)result[result.length-1].count+=diff;
+    } else {
+      // Need to remove cards — take from end
+      let toRemove=-diff;
+      for(let i=result.length-1;i>=0&&toRemove>0;i--){
+        const take=Math.min(result[i].count,toRemove);
+        result[i].count-=take;toRemove-=take;
+      }
+    }
+  }
+  // Remove unlabeled groups with count=0 (empty unlabeled groups are just noise)
+  return result.filter(g=>g.count>0||g.label);
 }
 // Build flat array of {type:'label',text} | {type:'card',cardIdx,pos} for rendering
 function buildGroupedRows(cards, groups){
@@ -486,11 +502,28 @@ function svRenameGroup(id,startPos,text){
   s.groups=ng;storeSaved(arr);
 }
 // Draft spread group functions
+// afterPos = last card position of the group we want to add a NEW group after
+// If afterPos < 0, creates first label for all cards
 function spAddGroup(afterPos){
   if(!spreadGroups.length){
-    spreadGroups=[{label:'',count:spread.length}];
+    // No groups yet — put all cards in first group, add new empty group after
+    spreadGroups=[{label:'',count:spread.length},{label:'',count:0}];
   } else {
-    spreadGroups=splitGroupsAt(spread,spreadGroups,afterPos);
+    // Find which group contains afterPos and insert new empty group after it
+    const ng=normalizeGroups(spread,spreadGroups);
+    const result=[];let cursor=0,inserted=false;
+    for(let gi=0;gi<ng.length;gi++){
+      result.push({label:ng[gi].label,count:ng[gi].count});
+      const gStart=cursor;
+      cursor+=ng[gi].count;
+      // afterPos = gStart of this group → insert new group after
+      if(!inserted&&afterPos>=gStart&&(afterPos<cursor||gi===ng.length-1)){
+        result.push({label:'',count:0});
+        inserted=true;
+      }
+    }
+    if(!inserted)result.push({label:'',count:0});
+    spreadGroups=result;
   }
   renderSpread();
 }
@@ -557,46 +590,110 @@ function renderCatalog(){
     </div>`).join('');
 }
 
-// ── DRAG AND DROP (draft spread) ──────────────────────────────────────────────
-let spDragPos=-1; // position in spread[] being dragged
-function spDragStart(e,pos){spDragPos=pos;e.dataTransfer.effectAllowed='move';e.currentTarget.classList.add('sp-dragging');}
-function spDragEnd(e){spDragPos=-1;e.currentTarget.classList.remove('sp-dragging');document.querySelectorAll('.scard.sp-dragover').forEach(el=>el.classList.remove('sp-dragover'));}
-function spDragOver(e,pos){e.preventDefault();e.dataTransfer.dropEffect='move';if(pos!==spDragPos){e.currentTarget.classList.add('sp-dragover');}}
+// ── DRAG AND DROP ─────────────────────────────────────────────────────────────
+let spDragPos=-1;
+function spDragStart(e,pos){spDragPos=pos;e.dataTransfer.effectAllowed='move';setTimeout(()=>e.currentTarget.classList.add('sp-dragging'),0);}
+function spDragEnd(e){spDragPos=-1;e.currentTarget.classList.remove('sp-dragging');document.querySelectorAll('.sp-dragover,.sv-dragover').forEach(el=>el.classList.remove('sp-dragover','sv-dragover'));}
+function spDragOver(e,pos){e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('sp-dragover');}
 function spDragLeave(e){e.currentTarget.classList.remove('sp-dragover');}
+// Drop ON a card — card moves to same group, reorders before/after target
 function spDrop(e,targetPos){
-  e.preventDefault();e.currentTarget.classList.remove('sp-dragover');
+  e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove('sp-dragover');
   if(spDragPos<0||spDragPos===targetPos)return;
-  // Determine which group each position belongs to
+  spMoveCard(spDragPos,targetPos,null);// null = same group as target
+}
+// Drop ON a group header — card moves to that group (appended at end of group)
+function spDropGroup(e,toGi){
+  e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove('sp-dragover');
+  if(spDragPos<0)return;
   const ng=normalizeGroups(spread,spreadGroups);
-  // Find target group index
+  let cursor=0,fromGi=-1;
+  for(let gi=0;gi<ng.length;gi++){for(let j=0;j<ng[gi].count;j++){if(cursor===spDragPos)fromGi=gi;cursor++;}}
+  if(fromGi===toGi)return;
+  spMoveCard(spDragPos,-1,toGi);
+}
+function spMoveCard(fromPos,toPos,toGiOverride){
+  const ng=normalizeGroups(spread,spreadGroups);
   let cursor=0,fromGi=-1,toGi=-1;
   for(let gi=0;gi<ng.length;gi++){
     for(let j=0;j<ng[gi].count;j++){
-      if(cursor===spDragPos)fromGi=gi;
-      if(cursor===targetPos)toGi=gi;
+      if(cursor===fromPos)fromGi=gi;
+      if(toPos>=0&&cursor===toPos)toGi=gi;
       cursor++;
     }
   }
-  // Reorder spread array
-  const cardIdx=spread[spDragPos];
+  if(toGiOverride!==null)toGi=toGiOverride;
+  const cardIdx=spread[fromPos];
   const newSpread=[...spread];
-  newSpread.splice(spDragPos,1);
-  const insertAt=targetPos>spDragPos?targetPos-1:targetPos;
+  newSpread.splice(fromPos,1);
+  let insertAt;
+  if(toPos>=0){insertAt=toPos>fromPos?toPos-1:toPos;}
+  else{// append to end of toGi
+    let c=0;for(let gi=0;gi<=toGi;gi++)c+=ng[gi].count;
+    insertAt=Math.max(0,c-1+(toGi>fromGi?0:-1));
+  }
   newSpread.splice(insertAt,0,cardIdx);
   spread=newSpread;
-  // Rebuild groups: move card from fromGi to toGi
   if(ng.length&&fromGi>=0&&toGi>=0&&fromGi!==toGi){
-    ng[fromGi].count--;
-    ng[toGi].count++;
-    const merged=[];
-    for(const g of ng){
-      if(g.count<=0)continue;
-      if(!g.label&&merged.length&&!merged[merged.length-1].label)merged[merged.length-1].count+=g.count;
-      else merged.push({...g});
-    }
-    spreadGroups=merged.length===1&&!merged[0].label?[]:merged;
+    ng[fromGi].count--;ng[toGi].count++;
+    spreadGroups=ng.filter(g=>g.count>0||g.label);
+    if(spreadGroups.length===1&&!spreadGroups[0].label)spreadGroups=[];
   }
   updCount();renderCatalog();renderSpread();
+}
+
+// Saved spread DnD
+let svDragInfo=null;// {sid, fromPos}
+function svDragStart(e,sid,pos){svDragInfo={sid,pos};e.dataTransfer.effectAllowed='move';setTimeout(()=>e.currentTarget.classList.add('sp-dragging'),0);}
+function svDragEnd(e){svDragInfo=null;e.currentTarget.classList.remove('sp-dragging');document.querySelectorAll('.sp-dragover,.sv-dragover').forEach(el=>el.classList.remove('sp-dragover','sv-dragover'));}
+function svDragOver(e){e.preventDefault();e.stopPropagation();e.currentTarget.classList.add('sv-dragover');}
+function svDragLeave(e){e.currentTarget.classList.remove('sv-dragover');}
+function svDrop(e,sid,toPos){
+  e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove('sv-dragover');
+  if(!svDragInfo||svDragInfo.sid!==sid||svDragInfo.pos===toPos)return;
+  svMoveCard(sid,svDragInfo.pos,toPos,null);
+}
+function svDropGroup(e,sid,toGi){
+  e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove('sv-dragover');
+  if(!svDragInfo||svDragInfo.sid!==sid)return;
+  svMoveCard(sid,svDragInfo.pos,-1,toGi);
+}
+function svMoveCard(sid,fromPos,toPos,toGiOverride){
+  const arr=loadSaved();const s=arr.find(x=>x.id===sid);if(!s)return;
+  const ng=normalizeGroups(s.cards,s.groups||[]);
+  let cursor=0,fromGi=-1,toGi=-1;
+  for(let gi=0;gi<ng.length;gi++){
+    for(let j=0;j<ng[gi].count;j++){
+      if(cursor===fromPos)fromGi=gi;
+      if(toPos>=0&&cursor===toPos)toGi=gi;
+      cursor++;
+    }
+  }
+  if(toGiOverride!==null)toGi=toGiOverride;
+  const cardIdx=s.cards[fromPos];
+  s.cards.splice(fromPos,1);
+  let insertAt;
+  if(toPos>=0){insertAt=toPos>fromPos?toPos-1:toPos;}
+  else{let c=0;for(let gi=0;gi<=toGi;gi++)c+=ng[gi].count;insertAt=Math.max(0,c-1+(toGi>fromGi?0:-1));}
+  s.cards.splice(insertAt,0,cardIdx);
+  if(ng.length&&fromGi>=0&&toGi>=0&&fromGi!==toGi){
+    ng[fromGi].count--;ng[toGi].count++;
+    s.groups=ng.filter(g=>g.count>0||g.label);
+    if(s.groups.length===1&&!s.groups[0].label)s.groups=[];
+  }
+  s.date=Date.now();storeSaved(arr);renderSaved();
+}
+
+// svAddGroup: add a new empty label group after the group containing afterPos
+function svAddGroupNew(id){
+  const arr=loadSaved();const s=arr.find(x=>x.id===id);if(!s)return;
+  if(!s.groups||!s.groups.length){
+    s.groups=[{label:'',count:s.cards.length},{label:'',count:0}];
+    if(!s.cards.length)s.groups=[{label:'',count:0}];
+  } else {
+    s.groups=[...normalizeGroups(s.cards,s.groups),{label:'',count:0}];
+  }
+  storeSaved(arr);renderSaved();
 }
 
 function renderSpread(){
@@ -609,21 +706,19 @@ function renderSpread(){
   const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
   if(!ng.length){
     // No groups — show add-first-label button, then all cards
-    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup(${spread.length-1})">＋ Додати мітку</button></div>`;
+    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup(-1)">＋ Додати мітку</button></div>`;
     html+=spread.map((i,p)=>mkCard(i,p)).join('');
   } else {
     for(let gi=0;gi<ng.length;gi++){
       const g=ng[gi];const gStart=cardPos;
-      // Group header
-      html+=`<div class="sp-group-row"><div class="sp-group-label-wrap"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
+      // Group header — also a drop target
+      html+=`<div class="sp-group-row"><div class="sp-group-label-wrap sp-group-droptarget" ondragover="spDragOver(event,${cardPos})" ondragleave="spDragLeave(event)" ondrop="spDropGroup(event,${gi})"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
       for(let j=0;j<g.count;j++){
         html+=mkCard(spread[cardPos],cardPos);
         cardPos++;
       }
-      // Between groups: add-label drop zone hint
-      if(gi<ng.length-1){
-        html+=`<div class="sp-group-sep"></div>`;
-      }
+      // After each group: "add new label" button
+      html+=`<div class="sp-addlbl-row sp-addlbl-between"><button class="sp-addlbl-btn" onclick="spAddGroup(${gStart})">＋ Нова мітка</button></div>`;
     }
   }
   grid.innerHTML=html;

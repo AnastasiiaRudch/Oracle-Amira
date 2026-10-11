@@ -98,10 +98,13 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sp-addlbl-btn{background:rgba(201,168,76,.06);border:1px dashed rgba(201,168,76,.3);color:rgba(201,168,76,.6);border-radius:7px;padding:5px 18px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.05em;cursor:pointer;transition:all .18s}
 .sp-addlbl-btn:hover{background:rgba(201,168,76,.16);border-color:var(--acc);color:var(--acc)}
 /* Drag and drop */
-.scard[draggable]{cursor:grab}
-.scard[draggable]:active{cursor:grabbing}
-.scard.sp-dragging{opacity:.35;transform:scale(.97)}
+.scard[draggable],.sv-card-edit[draggable]{cursor:grab}
+.scard[draggable]:active,.sv-card-edit[draggable]:active{cursor:grabbing}
+.scard.sp-dragging,.sv-card-edit.sp-dragging{opacity:.3;transform:scale(.95)}
 .scard.sp-dragover{outline:2px dashed var(--acc);outline-offset:3px;background:rgba(201,168,76,.07)}
+.sv-card-edit.sv-dragover{outline:2px dashed var(--acc);outline-offset:2px;background:rgba(201,168,76,.07)}
+.sp-group-droptarget.sp-dragover,.sv-group-droptarget.sv-dragover{background:rgba(201,168,76,.22);border-color:var(--acc);}
+.sp-addlbl-between{padding:2px 0}
 .sp-group-sep{grid-column:1/-1;height:2px;background:rgba(201,168,76,.12);border-radius:2px;margin:6px 0}
 
 /* MODAL */
