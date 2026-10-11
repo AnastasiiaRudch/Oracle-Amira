@@ -155,16 +155,9 @@ function pickCard(cardIdx){
   } else {
     // add at pos (insert before pos, which means appending to end when pos=cards.length)
     s.cards.splice(pos,0,cardIdx);
-    // Expand the group containing pos (or last group if at end)
+    // New card goes as its own unlabeled group — not absorbed into existing groups
     if(s.groups&&s.groups.length){
-      const ng=normalizeGroups(s.cards.slice(0,-1),s.groups);// groups before insertion
-      let cursor=0,expanded=false;
-      for(const g of ng){
-        if(pos>=cursor&&pos<=cursor+g.count){g.count++;expanded=true;break;}
-        cursor+=g.count;
-      }
-      if(!expanded&&ng.length)ng[ng.length-1].count++;
-      s.groups=ng;
+      s.groups.push({label:'',count:1});
     }
   }
   s.date=Date.now();
@@ -367,7 +360,13 @@ function inS(i){return spread.includes(i)}
 
 function toggleS(i){
   if(inS(i)) spread=spread.filter(x=>x!==i);
-  else spread.push(i);
+  else {
+    spread.push(i);
+    // New card goes as its own unlabeled group, not absorbed into existing groups
+    if(spreadGroups.length){
+      spreadGroups.push({label:'',count:1});
+    }
+  }
   updCount(); renderCatalog(); renderSpread();
   if(mIdx===i) updMBtn();
 }
@@ -511,7 +510,7 @@ function spRenameGroup(startPos,text){
   const ng=normalizeGroups(spread,spreadGroups);
   let cursor=0;
   for(const g of ng){if(cursor===startPos){g.label=text;break;}cursor+=g.count;}
-  spreadGroups=ng;renderSpread();
+  spreadGroups=ng;// no renderSpread() — preserves input focus
 }
 function updCount(){
   document.getElementById('spill').textContent=spread.length;
@@ -558,6 +557,48 @@ function renderCatalog(){
     </div>`).join('');
 }
 
+// ── DRAG AND DROP (draft spread) ──────────────────────────────────────────────
+let spDragPos=-1; // position in spread[] being dragged
+function spDragStart(e,pos){spDragPos=pos;e.dataTransfer.effectAllowed='move';e.currentTarget.classList.add('sp-dragging');}
+function spDragEnd(e){spDragPos=-1;e.currentTarget.classList.remove('sp-dragging');document.querySelectorAll('.scard.sp-dragover').forEach(el=>el.classList.remove('sp-dragover'));}
+function spDragOver(e,pos){e.preventDefault();e.dataTransfer.dropEffect='move';if(pos!==spDragPos){e.currentTarget.classList.add('sp-dragover');}}
+function spDragLeave(e){e.currentTarget.classList.remove('sp-dragover');}
+function spDrop(e,targetPos){
+  e.preventDefault();e.currentTarget.classList.remove('sp-dragover');
+  if(spDragPos<0||spDragPos===targetPos)return;
+  // Determine which group each position belongs to
+  const ng=normalizeGroups(spread,spreadGroups);
+  // Find target group index
+  let cursor=0,fromGi=-1,toGi=-1;
+  for(let gi=0;gi<ng.length;gi++){
+    for(let j=0;j<ng[gi].count;j++){
+      if(cursor===spDragPos)fromGi=gi;
+      if(cursor===targetPos)toGi=gi;
+      cursor++;
+    }
+  }
+  // Reorder spread array
+  const cardIdx=spread[spDragPos];
+  const newSpread=[...spread];
+  newSpread.splice(spDragPos,1);
+  const insertAt=targetPos>spDragPos?targetPos-1:targetPos;
+  newSpread.splice(insertAt,0,cardIdx);
+  spread=newSpread;
+  // Rebuild groups: move card from fromGi to toGi
+  if(ng.length&&fromGi>=0&&toGi>=0&&fromGi!==toGi){
+    ng[fromGi].count--;
+    ng[toGi].count++;
+    const merged=[];
+    for(const g of ng){
+      if(g.count<=0)continue;
+      if(!g.label&&merged.length&&!merged[merged.length-1].label)merged[merged.length-1].count+=g.count;
+      else merged.push({...g});
+    }
+    spreadGroups=merged.length===1&&!merged[0].label?[]:merged;
+  }
+  updCount();renderCatalog();renderSpread();
+}
+
 function renderSpread(){
   const empty=document.getElementById('semp');
   const grid=document.getElementById('sgrid');
@@ -565,19 +606,23 @@ function renderSpread(){
   empty.style.display='none';
   const ng=normalizeGroups(spread,spreadGroups);
   let html='';let cardPos=0;
+  const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
   if(!ng.length){
     // No groups — show add-first-label button, then all cards
     html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup(${spread.length-1})">＋ Додати мітку</button></div>`;
-    html+=spread.map((i,p)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;}).join('');
+    html+=spread.map((i,p)=>mkCard(i,p)).join('');
   } else {
     for(let gi=0;gi<ng.length;gi++){
       const g=ng[gi];const gStart=cardPos;
       // Group header
-      html+=`<div class="sp-group-row"><div class="sp-group-label-wrap"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва питання..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
+      html+=`<div class="sp-group-row"><div class="sp-group-label-wrap"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
       for(let j=0;j<g.count;j++){
-        const i=spread[cardPos];const c=CARDS[i];const bc=bColor(c.block);
-        html+=`<div class="scard" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;
+        html+=mkCard(spread[cardPos],cardPos);
         cardPos++;
+      }
+      // Between groups: add-label drop zone hint
+      if(gi<ng.length-1){
+        html+=`<div class="sp-group-sep"></div>`;
       }
     }
   }

@@ -97,6 +97,12 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sp-addlbl-row{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0}
 .sp-addlbl-btn{background:rgba(201,168,76,.06);border:1px dashed rgba(201,168,76,.3);color:rgba(201,168,76,.6);border-radius:7px;padding:5px 18px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.05em;cursor:pointer;transition:all .18s}
 .sp-addlbl-btn:hover{background:rgba(201,168,76,.16);border-color:var(--acc);color:var(--acc)}
+/* Drag and drop */
+.scard[draggable]{cursor:grab}
+.scard[draggable]:active{cursor:grabbing}
+.scard.sp-dragging{opacity:.35;transform:scale(.97)}
+.scard.sp-dragover{outline:2px dashed var(--acc);outline-offset:3px;background:rgba(201,168,76,.07)}
+.sp-group-sep{grid-column:1/-1;height:2px;background:rgba(201,168,76,.12);border-radius:2px;margin:6px 0}
 
 /* MODAL */
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:20px}
