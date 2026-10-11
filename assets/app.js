@@ -1,18 +1,19 @@
-let fblock='all', fsearch='', spread=[], mIdx=-1, editingId=null;
+let fblock='all', fsearch='', spread=[], mIdx=-1;
+// Inline editing of saved spreads
+let editingId=null, editReplaceIdx=null; // editReplaceIdx: card position to replace (null = add)
 
 // ── SAVED SPREADS (localStorage) ──────────────────────────────────────────
 const LS_KEY='oracle_saved_spreads';
 function loadSaved(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]')}catch{return[]}}
 function storeSaved(arr){try{localStorage.setItem(LS_KEY,JSON.stringify(arr))}catch{}}
 
+// ── SAVE DIALOG (for new spreads from draft) ──────────────────────────────
 function openSaveDialog(){
   if(!spread.length){alert('Розклад порожній — додайте картки перед збереженням.');return;}
-  const inp=document.getElementById('sdlg-input');
-  // Pre-fill with current name if editing
-  inp.value=editingId?(getSavedById(editingId)?.name||''):'';
-  document.getElementById('sdlg-title').textContent=editingId?'✏️ Зберегти зміни':'💾 Зберегти розклад';
+  document.getElementById('sdlg-input').value='';
+  document.getElementById('sdlg-title').textContent='💾 Зберегти розклад';
   document.getElementById('sdlg-ov').classList.add('on');
-  setTimeout(()=>inp.focus(),80);
+  setTimeout(()=>document.getElementById('sdlg-input').focus(),80);
 }
 function closeSaveDialog(){
   document.getElementById('sdlg-ov').classList.remove('on');
@@ -22,65 +23,104 @@ function confirmSave(){
   const name=document.getElementById('sdlg-input').value.trim();
   if(!name)return;
   const arr=loadSaved();
-  const now=Date.now();
-  if(editingId){
-    // Update existing spread in place
-    const idx=arr.findIndex(x=>x.id===editingId);
-    if(idx>=0) arr[idx]={id:editingId,name,cards:spread.slice(),date:now};
-    else arr.push({id:editingId,name,cards:spread.slice(),date:now});
-  } else {
-    arr.push({id:'sp_'+now,name,cards:spread.slice(),date:now});
-  }
+  arr.push({id:'sp_'+Date.now(),name,cards:spread.slice(),date:Date.now()});
   storeSaved(arr);
   spread=[];
-  editingId=null;
   updCount();
-  updEditBar();
   renderCatalog();
   renderSpread();
   closeSaveDialog();
   renderSaved();
 }
+
+// ── INLINE EDITING of saved spreads ───────────────────────────────────────
 function getSavedById(id){return loadSaved().find(x=>x.id===id)||null}
+
 function deleteSaved(id){
   if(!confirm('Видалити цей розклад?'))return;
-  const arr=loadSaved().filter(x=>x.id!==id);
-  storeSaved(arr);
-  if(editingId===id){editingId=null;spread=[];updCount();updEditBar();renderCatalog();renderSpread();}
+  storeSaved(loadSaved().filter(x=>x.id!==id));
+  if(editingId===id){editingId=null;}
   renderSaved();
 }
-function editSaved(id){
-  const s=getSavedById(id);
+
+function toggleEditMode(id){
+  editingId=(editingId===id)?null:id;
+  renderSaved();
+}
+
+// Remove a card from a saved spread at position pos
+function svRemoveCard(id,pos){
+  const arr=loadSaved();
+  const s=arr.find(x=>x.id===id);
   if(!s)return;
-  spread=s.cards.slice();
-  editingId=id;
-  updCount();
-  updEditBar();
-  renderCatalog();
-  renderSpread();
-  // Switch to spread tab
-  document.querySelectorAll('.tnav-btn').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
-  document.querySelector('.tnav-btn[data-pg="sp"]').classList.add('active');
-  document.getElementById('sp').classList.add('on');
+  s.cards.splice(pos,1);
+  s.date=Date.now();
+  storeSaved(arr);
+  renderSaved();
 }
-function cancelEdit(){
-  spread=[];
-  editingId=null;
-  updCount();
-  updEditBar();
-  renderCatalog();
-  renderSpread();
+
+// Open card-picker popup: mode 'add'|'replace', for spread id, at position pos
+function openCardPicker(id,mode,pos){
+  editReplaceIdx=(mode==='replace')?pos:null;
+  document.getElementById('cpk-ov').dataset.sid=id;
+  document.getElementById('cpk-ov').dataset.mode=mode;
+  document.getElementById('cpk-ov').dataset.pos=pos;
+  cpkSearch=''; cpkBlock='all';
+  document.getElementById('cpk-search').value='';
+  document.querySelectorAll('.cpk-fbtn').forEach(b=>b.classList.toggle('active',b.dataset.b==='all'));
+  renderCardPicker();
+  document.getElementById('cpk-ov').classList.add('on');
 }
-function updEditBar(){
-  const bar=document.getElementById('edit-bar');
-  if(editingId){
-    const s=getSavedById(editingId);
-    document.getElementById('edit-bar-name').textContent=s?s.name:'';
-    bar.style.display='flex';
+function closeCardPicker(){document.getElementById('cpk-ov').classList.remove('on');}
+document.getElementById('cpk-ov').addEventListener('click',e=>{if(e.target===document.getElementById('cpk-ov'))closeCardPicker();});
+function cpkSetBlock(b){
+  cpkBlock=b;
+  document.querySelectorAll('.cpk-fbtn').forEach(x=>x.classList.toggle('active',x.dataset.b===b));
+  renderCardPicker();
+}
+
+let cpkSearch='', cpkBlock='all';
+function renderCardPicker(){
+  const q=cpkSearch.toLowerCase().trim();
+  const ov=document.getElementById('cpk-ov');
+  const sid=ov.dataset.sid;
+  const mode=ov.dataset.mode;
+  const pos=parseInt(ov.dataset.pos);
+  // Cards already in this spread (to show checkmark)
+  const s=getSavedById(sid);
+  const inSpread=new Set(s?s.cards:[]);
+  const filtered=CARDS.map((c,i)=>({c,i})).filter(({c})=>{
+    if(cpkBlock!=='all'&&c.block!==cpkBlock)return false;
+    if(!q)return true;
+    return String(c.num)===q||c.name.toLowerCase().includes(q);
+  });
+  document.getElementById('cpk-grid').innerHTML=filtered.map(({c,i})=>{
+    const already=inSpread.has(i)&&!(mode==='replace'&&s&&s.cards[pos]===i);
+    return `<div class="cpk-card${already?' cpk-in':''}" onclick="pickCard(${i})">
+      <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
+      <div class="cpk-name">${c.name}</div>
+      ${already?'<div class="cpk-badge">✓</div>':''}
+    </div>`;
+  }).join('');
+}
+function pickCard(cardIdx){
+  const ov=document.getElementById('cpk-ov');
+  const sid=ov.dataset.sid;
+  const mode=ov.dataset.mode;
+  const pos=parseInt(ov.dataset.pos);
+  const arr=loadSaved();
+  const s=arr.find(x=>x.id===sid);
+  if(!s)return;
+  if(mode==='replace'){
+    s.cards[pos]=cardIdx;
   } else {
-    bar.style.display='none';
+    // add after pos
+    s.cards.splice(pos,0,cardIdx);
   }
+  s.date=Date.now();
+  storeSaved(arr);
+  closeCardPicker();
+  renderSaved();
 }
 let expandedSaved=new Set();
 function toggleSavedExpand(id){
@@ -97,15 +137,39 @@ function renderSaved(){
   list.innerHTML=arr.slice().reverse().map(s=>{
     const d=new Date(s.date);
     const dateStr=d.toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const isOpen=expandedSaved.has(s.id);
-    const cardsHtml=isOpen?`<div class="sv-cards">${s.cards.map(i=>{
-      const c=CARDS[i];
-      return `<div class="sv-card" onclick="openM(${i})">
-        <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
-        <div class="sv-card-name">${c.name}</div>
-      </div>`;
-    }).join('')}</div>`:'';
-    return `<div class="sv-item" data-id="${s.id}">
+    const isOpen=expandedSaved.has(s.id)||editingId===s.id;
+    const isEditing=editingId===s.id;
+    let cardsHtml='';
+    if(isOpen){
+      if(isEditing){
+        // Edit mode: ✕ + ⇄ on cards, ＋ between cards
+        let inner='<div class="sv-add-row"><button class="sv-add-btn" onclick="openCardPicker(\''+s.id+'\',\'add\',0)">＋</button></div>';
+        s.cards.forEach((ci,pos)=>{
+          const c=CARDS[ci];
+          inner+=`<div class="sv-card-wrap">
+            <div class="sv-card sv-card-edit">
+              <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
+              <div class="sv-card-name">${c.name}</div>
+              <div class="sv-card-actions">
+                <button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${pos})">✕</button>
+                <button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${pos})">⇄</button>
+              </div>
+            </div>
+            <div class="sv-add-row"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${pos+1})">＋</button></div>
+          </div>`;
+        });
+        cardsHtml=`<div class="sv-cards sv-cards-edit">${inner}</div>`;
+      } else {
+        cardsHtml=`<div class="sv-cards">${s.cards.map((i,pos)=>{
+          const c=CARDS[i];
+          return `<div class="sv-card" onclick="openM(${i})">
+            <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
+            <div class="sv-card-name">${c.name}</div>
+          </div>`;
+        }).join('')}</div>`;
+      }
+    }
+    return `<div class="sv-item${isEditing?' sv-editing':''}" data-id="${s.id}">
       <div class="sv-top" onclick="toggleSavedExpand('${s.id}')" style="cursor:pointer">
         <div class="sv-chevron">${isOpen?'▾':'▸'}</div>
         <div class="sv-info">
@@ -113,7 +177,7 @@ function renderSaved(){
           <div class="sv-meta">${s.cards.length} карт · ${dateStr}</div>
         </div>
         <div class="sv-btns" onclick="event.stopPropagation()">
-          <button class="sv-btn sv-edit" onclick="editSaved('${s.id}')">✏️ Редагувати</button>
+          <button class="sv-btn sv-edit${isEditing?' sv-edit-active':''}" onclick="toggleEditMode('${s.id}')">${isEditing?'✓ Готово':'✏️ Редагувати'}</button>
           <button class="sv-btn sv-del" onclick="deleteSaved('${s.id}')">🗑</button>
         </div>
       </div>
@@ -122,8 +186,12 @@ function renderSaved(){
   }).join('');
 }
 
-// Save dialog keyboard
+// Keyboard shortcuts
 document.addEventListener('keydown',e=>{
+  if(document.getElementById('cpk-ov').classList.contains('on')){
+    if(e.key==='Escape')closeCardPicker();
+    return;
+  }
   if(document.getElementById('sdlg-ov').classList.contains('on')){
     if(e.key==='Enter')confirmSave();
     if(e.key==='Escape')closeSaveDialog();

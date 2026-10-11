@@ -53,11 +53,6 @@
         <button class="btn-clear" onclick="clearSpread()">🗑&nbsp; Очистити</button>
       </div>
     </div>
-    <div id="edit-bar" class="edit-bar" style="display:none">
-      <span class="edit-bar-icon">✏️</span>
-      <span>Редагування: <strong id="edit-bar-name"></strong></span>
-      <button class="edit-bar-cancel" onclick="cancelEdit()">✕ Скасувати</button>
-    </div>
     <div id="semp" class="sp-empty">
       <div class="s">🌙</div>
       <p>Розклад ще порожній</p>
@@ -91,6 +86,29 @@
       <button class="sdlg-cancel" onclick="closeSaveDialog()">Скасувати</button>
       <button class="sdlg-ok" onclick="confirmSave()">Зберегти</button>
     </div>
+  </div>
+</div>
+
+<!-- CARD PICKER POPUP -->
+<div class="cpk-ov" id="cpk-ov">
+  <div class="cpk-modal">
+    <div class="cpk-hdr">
+      <div class="cpk-title">🃏 Оберіть картку</div>
+      <button class="cpk-close" onclick="closeCardPicker()">✕</button>
+    </div>
+    <div class="cpk-controls">
+      <div class="cpk-srch">
+        <span class="ico">🔍</span>
+        <input type="text" id="cpk-search" placeholder="Пошук за номером або назвою..." autocomplete="off" oninput="cpkSearch=this.value;renderCardPicker()">
+      </div>
+      <div class="cpk-filters">
+        <button class="cpk-fbtn active" data-b="all" onclick="cpkSetBlock('all')">Всі</button>
+        <button class="cpk-fbtn" data-b="Леноран" onclick="cpkSetBlock('Леноран')">Ленорман</button>
+        <button class="cpk-fbtn" data-b="Загальний" onclick="cpkSetBlock('Загальний')">Загальний</button>
+        <button class="cpk-fbtn" data-b="Магічний" onclick="cpkSetBlock('Магічний')">Магічний</button>
+      </div>
+    </div>
+    <div class="cpk-grid" id="cpk-grid"></div>
   </div>
 </div>
 
