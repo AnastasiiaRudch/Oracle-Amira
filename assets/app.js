@@ -183,7 +183,7 @@ function renderSaved(){
         <div class="sv-chevron">${isOpen?'▾':'▸'}</div>
         <div class="sv-info">
           ${isEditing
-            ? `<input class="sv-name-input" value="${s.name.replace(/"/g,'&quot;')}" maxlength="60" oninput="renameSaved('${s.id}',this.value)" onclick="event.stopPropagation()">`
+            ? `<input class="sv-name-input" value="${s.name.replace(/"/g,'&quot;')}" maxlength="60" oninput="renameSaved('${s.id}',this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">`
             : `<div class="sv-name">${s.name}</div>`}
           <div class="sv-meta">${s.cards.length} карт · ${dateStr}</div>
         </div>
