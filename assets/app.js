@@ -118,6 +118,16 @@ function cpkSetBlock(b){
 }
 
 let cpkSearch='', cpkBlock='all';
+function spOpenPickerForGroup(gi){
+  const ov=document.getElementById('cpk-ov');
+  ov.dataset.sid='__draft__';ov.dataset.mode='add';ov.dataset.pos='-1';ov.dataset.gi=gi;
+  cpkSearch='';cpkBlock='all';
+  document.getElementById('cpk-search').value='';
+  document.getElementById('cpk-clear').style.display='none';
+  document.querySelectorAll('.cpk-fbtn').forEach(b=>b.classList.toggle('active',b.dataset.b==='all'));
+  renderCardPicker();
+  ov.classList.add('on');
+}
 function renderCardPicker(){
   const q=cpkSearch.toLowerCase().trim();
   const ov=document.getElementById('cpk-ov');
@@ -125,7 +135,7 @@ function renderCardPicker(){
   const mode=ov.dataset.mode;
   const pos=parseInt(ov.dataset.pos);
   // Cards already in this spread (to show checkmark)
-  const s=getSavedById(sid);
+  const s=sid==='__draft__'?{cards:spread}:getSavedById(sid);
   const inSpread=new Set(s?s.cards:[]);
   const filtered=CARDS.map((c,i)=>({c,i})).filter(({c})=>{
     if(cpkBlock!=='all'&&c.block!==cpkBlock)return false;
@@ -146,6 +156,23 @@ function pickCard(cardIdx){
   const sid=ov.dataset.sid;
   const mode=ov.dataset.mode;
   const pos=parseInt(ov.dataset.pos);
+  // Special case: adding to draft spread group
+  if(sid==='__draft__'){
+    if(spread.includes(cardIdx)){closeCardPicker();return;}
+    const toGi=parseInt(ov.dataset.gi);
+    const ng=normalizeGroups(spread,spreadGroups);
+    spread.push(cardIdx);
+    if(!ng.length){
+      spreadGroups=[{label:'',count:1}];
+    } else {
+      // Add card to the specified group
+      if(toGi>=0&&toGi<ng.length){ng[toGi].count++;}
+      else{ng[ng.length-1].count++;}
+      spreadGroups=ng;
+    }
+    updCount();renderCatalog();closeCardPicker();renderSpread();
+    return;
+  }
   const arr=loadSaved();
   const s=arr.find(x=>x.id===sid);
   if(!s)return;
@@ -153,11 +180,21 @@ function pickCard(cardIdx){
     s.cards[pos]=cardIdx;
     // groups unchanged for replace
   } else {
-    // add at pos (insert before pos, which means appending to end when pos=cards.length)
-    s.cards.splice(pos,0,cardIdx);
-    // New card goes as its own unlabeled group — not absorbed into existing groups
-    if(s.groups&&s.groups.length){
-      s.groups.push({label:'',count:1});
+    // add — append card to end of specified group (dataset.gi), or plain append
+    const toGi=parseInt(ov.dataset.gi||'-1');
+    if(s.groups&&s.groups.length&&toGi>=0){
+      // Insert card at end of target group: find insertion position
+      const ng=normalizeGroups(s.cards,s.groups);
+      let insertPos=s.cards.length;// default: end
+      let cursor=0;
+      for(let gi=0;gi<=toGi&&gi<ng.length;gi++){cursor+=ng[gi].count;}
+      insertPos=cursor;// end of toGi group
+      s.cards.splice(insertPos,0,cardIdx);
+      ng[toGi].count++;
+      s.groups=ng;
+    } else {
+      s.cards.splice(pos>=0?pos:s.cards.length,0,cardIdx);
+      // No groups — just append
     }
   }
   s.date=Date.now();
@@ -206,11 +243,14 @@ function renderSaved(){
               inner+=mkSvCard(s.cards[cardPos],cardPos);
               cardPos++;
             }
+            // Add-card button per group
+            inner+=`<div class="sv-group-addcard"><button class="sv-group-addcard-btn" onclick="openCardPicker('${s.id}','add-to-group',${cardPos});document.getElementById('cpk-ov').dataset.gi='${gi}'">＋ Додати картку</button></div>`;
           }
-          // Single "add new label" button at the bottom
+          // "New label" button at the bottom
           inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
         }
-        inner+=`<div class="sv-add-tile"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${s.cards.length})">＋</button></div>`;
+        // Add card button (no groups) — only when no groups
+        if(!ng.length)inner+=`<div class="sv-add-tile"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${s.cards.length})">＋</button></div>`;
         cardsHtml=`<div class="sv-cards sv-cards-edit">${inner}</div>`;
       } else {
         // View mode: render with group headers
@@ -505,12 +545,11 @@ function svRenameGroup(id,startPos,text){
 // Always appends a new empty group at the end
 function spAddGroup(){
   if(!spreadGroups.length){
-    // No groups yet — put all existing cards in first group, then new empty group
-    spreadGroups=[{label:'',count:spread.length},{label:'',count:0}];
+    // No groups yet — wrap ALL cards in one group with empty label (one input appears)
+    spreadGroups=[{label:'',count:spread.length}];
   } else {
     // Normalize first, then append a new empty group (avoid double-appending)
     const ng=normalizeGroups(spread,spreadGroups);
-    // Only append if the last group already has a label or has cards
     const last=ng[ng.length-1];
     if(last&&!last.label&&last.count===0){/* already have empty group, just focus it */}
     else{ng.push({label:'',count:0});}
@@ -684,7 +723,8 @@ function svMoveCard(sid,fromPos,toPos,toGiOverride){
 function svAddGroupNew(id){
   const arr=loadSaved();const s=arr.find(x=>x.id===id);if(!s)return;
   if(!s.groups||!s.groups.length){
-    s.groups=[{label:'',count:s.cards.length},{label:'',count:0}];
+    // Wrap all cards in one group with empty label
+    s.groups=[{label:'',count:s.cards.length}];
   } else {
     const ng=normalizeGroups(s.cards,s.groups);
     const last=ng[ng.length-1];
@@ -725,8 +765,10 @@ function renderSpread(){
         html+=mkCard(spread[cardPos],cardPos);
         cardPos++;
       }
+      // Add-card button per group
+      html+=`<div class="sp-group-addcard"><button class="sp-group-addcard-btn" onclick="spOpenPickerForGroup(${gi})">＋ Додати картку</button></div>`;
     }
-    // Single "add new label" button at the bottom
+    // "New label" button at the bottom
     html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
   }
   grid.innerHTML=html;

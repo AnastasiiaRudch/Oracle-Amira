@@ -97,6 +97,12 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sp-addlbl-row{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0}
 .sp-addlbl-btn{background:rgba(201,168,76,.06);border:1px dashed rgba(201,168,76,.3);color:rgba(201,168,76,.6);border-radius:7px;padding:5px 18px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.05em;cursor:pointer;transition:all .18s}
 .sp-addlbl-btn:hover{background:rgba(201,168,76,.16);border-color:var(--acc);color:var(--acc)}
+.sp-group-addcard{grid-column:1/-1;padding:4px 0 8px}
+.sp-group-addcard-btn{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);color:var(--mut);border-radius:6px;padding:4px 14px;font-family:'Crimson Pro',serif;font-size:.85rem;cursor:pointer;transition:all .18s;width:100%;text-align:center}
+.sp-group-addcard-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.25);color:var(--txt)}
+.sv-group-addcard{grid-column:1/-1;padding:4px 0 8px}
+.sv-group-addcard-btn{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);color:var(--mut);border-radius:6px;padding:4px 14px;font-family:'Crimson Pro',serif;font-size:.85rem;cursor:pointer;transition:all .18s;width:100%;text-align:center}
+.sv-group-addcard-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.25);color:var(--txt)}
 /* Drag and drop */
 .scard[draggable],.sv-card-edit[draggable]{cursor:grab}
 .scard[draggable]:active,.sv-card-edit[draggable]:active{cursor:grabbing}
