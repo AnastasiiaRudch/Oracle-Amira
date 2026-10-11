@@ -716,7 +716,7 @@ function spMoveCard(fromPos,toPos,toGiOverride){
   spreadLabels=newLabels;
   if(ng.length&&fromGi>=0&&toGi>=0&&fromGi!==toGi){
     ng[fromGi].count--;ng[toGi].count++;
-    spreadGroups=ng.filter(g=>g.count>0||g.label);
+    spreadGroups=ng.filter(g=>g.count>0);
     if(spreadGroups.length===1&&!spreadGroups[0].label)spreadGroups=[];
   }
   updCount();renderCatalog();renderSpread();
@@ -782,7 +782,8 @@ function svMoveCard(sid,fromPos,toPos,toGiOverride){
   }
   if(ng.length&&fromGi>=0&&toGi>=0&&fromGi!==toGi){
     ng[fromGi].count--;ng[toGi].count++;
-    s.groups=ng.filter(g=>g.count>0||g.label);
+    // Remove empty groups (count=0) even if they have a label — label moves with the group being deleted
+    s.groups=ng.filter(g=>g.count>0);
     if(s.groups.length===1&&!s.groups[0].label)s.groups=[];
   }
   s.date=Date.now();storeSaved(arr);renderSaved();
