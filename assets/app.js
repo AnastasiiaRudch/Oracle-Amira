@@ -202,18 +202,18 @@ function renderSaved(){
         if(!ng.length){
           // No groups — show add-label button at top, then all cards
           inner+=`<div class="sv-add-label-tile sv-add-label-top"><button class="sv-add-label-btn" onclick="svAddGroup('${s.id}',${s.cards.length-1})">＋ Додати мітку до всіх карт</button></div>`;
-          inner+=s.cards.map((ci,p)=>{const c=CARDS[ci];return `<div class="sv-card sv-card-edit"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div>`;}).join('');
+          inner+=s.cards.map((ci,p)=>{const c=CARDS[ci];const canSplit=p<s.cards.length-1;return `<div class="sv-card sv-card-edit"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button>${canSplit?`<button class="sv-ca-sp" title="Новий розділ після цієї карти" onclick="svAddGroup('${s.id}',${p})">÷</button>`:''}</div></div>`;}).join('');
         } else {
           for(let gi=0;gi<ng.length;gi++){
             const g=ng[gi];const gStart=cardPos;
             inner+=`<div class="sv-group-header" data-start="${gStart}"><input class="sv-group-input" data-id="${s.id}" data-start="${gStart}" maxlength="80" oninput="svRenameGroup('${s.id}',${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва питання..."><button class="sv-group-del" title="Видалити мітку" onclick="svRemoveGroup('${s.id}',${gStart})">✕</button></div>`;
             for(let j=0;j<g.count;j++){
               const ci=s.cards[cardPos];const c=CARDS[ci];const p=cardPos;
-              inner+=`<div class="sv-card sv-card-edit"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div>`;
+              const isLastInGroup=(j===g.count-1);
+              const splitBtn=(ng.length>0&&!isLastInGroup||ng.length>1&&isLastInGroup&&gi<ng.length-1)?'':`<button class="sv-ca-sp" title="Розбити тут" onclick="svAddGroup('${s.id}',${p})">÷</button>`;
+              const canSplit=p<s.cards.length-1;
+              inner+=`<div class="sv-card sv-card-edit"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button>${canSplit?`<button class="sv-ca-sp" title="Новий розділ після цієї карти" onclick="svAddGroup('${s.id}',${p})">÷</button>`:''}</div></div>`;
               cardPos++;
-            }
-            if(gi<ng.length-1){
-              inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroup('${s.id}',${cardPos-1})">＋ мітка</button></div>`;
             }
           }
         }
@@ -427,30 +427,35 @@ function svSaveGroups(id,groups){
 // Add a group boundary: split so that there's a new (empty-label) group starting at afterPos+1
 function svAddGroup(id,afterPos){
   const arr=loadSaved();const s=arr.find(x=>x.id===id);if(!s)return;
-  s.groups=splitGroupsAt(s.cards,s.groups||[],afterPos);
+  // Special case: "add label to all cards" — afterPos === cards.length-1, just wrap all in one group
+  if(!s.groups||!s.groups.length){
+    s.groups=[{label:'',count:s.cards.length}];
+  } else {
+    s.groups=splitGroupsAt(s.cards,s.groups,afterPos);
+  }
   storeSaved(arr);renderSaved();
 }
 function splitGroupsAt(cards,groups,afterPos){
-  // afterPos = last card index of the FIRST group (0-based)
-  // Build boundary array from current groups, add a boundary after afterPos, rebuild groups
+  // afterPos = last card index of the group that should end here (0-based)
+  // We insert a new boundary after afterPos
   const ng=normalizeGroups(cards,groups);
-  // Collect existing split points (cumulative counts)
-  const splits=new Set();let c2=0;
-  for(let i=0;i<ng.length-1;i++){c2+=ng[i].count;splits.add(c2);}
-  splits.add(afterPos+1); // new boundary
-  // Rebuild groups from splits
-  const sortedSplits=[...splits].filter(x=>x>0&&x<cards.length).sort((a,b)=>a-b);
-  // Map split-point → label from existing groups
-  const labelMap={};c2=0;
-  for(let i=0;i<ng.length;i++){if(i>0)labelMap[c2]=ng[i].label||'';c2+=ng[i].count;}
-  const result=[];let prev=0;
-  for(const sp of sortedSplits){
-    result.push({label:labelMap[prev]!==undefined?labelMap[prev]:'',count:sp-prev});
-    prev=sp;
+  if(!ng.length)return [{label:'',count:cards.length}];
+  // Build result by splitting the group that contains afterPos
+  const result=[];let cursor=0;
+  for(let gi=0;gi<ng.length;gi++){
+    const g=ng[gi];
+    const gEnd=cursor+g.count-1;
+    if(afterPos>=cursor&&afterPos<gEnd){
+      // Split this group: first part ends at afterPos, second starts at afterPos+1
+      const firstCount=afterPos-cursor+1;
+      const secondCount=g.count-firstCount;
+      result.push({label:g.label,count:firstCount});
+      result.push({label:'',count:secondCount});
+    } else {
+      result.push({label:g.label,count:g.count});
+    }
+    cursor+=g.count;
   }
-  result.push({label:labelMap[prev]!==undefined?labelMap[prev]:'',count:cards.length-prev});
-  // Clean up: if only one group with no label, return empty
-  if(result.length===1&&!result[0].label)return[];
   return result;
 }
 // Remove the label from a group (make it unlabeled, merge if adjacent unlabeled)
@@ -483,7 +488,11 @@ function svRenameGroup(id,startPos,text){
 }
 // Draft spread group functions
 function spAddGroup(afterPos){
-  spreadGroups=splitGroupsAt(spread,spreadGroups,afterPos);
+  if(!spreadGroups.length){
+    spreadGroups=[{label:'',count:spread.length}];
+  } else {
+    spreadGroups=splitGroupsAt(spread,spreadGroups,afterPos);
+  }
   renderSpread();
 }
 function spRemoveGroup(startPos){
@@ -569,9 +578,6 @@ function renderSpread(){
         const i=spread[cardPos];const c=CARDS[i];const bc=bColor(c.block);
         html+=`<div class="scard" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;
         cardPos++;
-      }
-      if(gi<ng.length-1){
-        html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup(${cardPos-1})">＋ мітка</button></div>`;
       }
     }
   }
