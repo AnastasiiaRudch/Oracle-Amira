@@ -23,9 +23,9 @@ const CAT_MAP = [
   { pat: /^(В магических вопросах\s*:)/i,                  icon:'🔮', cls:'cat-mag' },
   { pat: /^(Магия\s*:)/i,                                  icon:'🔮', cls:'cat-mag' },
   { pat: /^(Не магическая трактовка\s*:)/i,                icon:'🔮', cls:'cat-mag' },
-  // Chakra
+  // Chakra — covers "Чакра:", "Чакры:", and "Чакра в ресурсе..." (no colon)
   { pat: /^(Чакры?\s*:)/i,                                 icon:'✨', cls:'cat-chk' },
-  { pat: /^(Чакра\b.*)/i,                                  icon:'✨', cls:'cat-chk' },
+  { pat: /^(Чакра\b)/i,                                    icon:'✨', cls:'cat-chk' },
   // Answer
   { pat: /^(Отве[тТ]?[еЕ]?\s*:.+)/i,                      icon:'🌟', cls:'cat-ans' },
   // Advice
@@ -50,12 +50,18 @@ function formatDesc(text) {
     for (const {pat, icon, cls} of CAT_MAP) {
       const m = trimmed.match(pat);
       if (m) {
-        // Split "Category: rest of text" — colon may or may not be in match
+        // Split "Category: rest of text"
+        // The matched group m[1] is the label part (with colon if present)
+        const labelRaw = m[1];
         const colonIdx = trimmed.indexOf(':');
-        let label = trimmed, rest = '';
-        if (colonIdx > 0 && colonIdx < 60) {
+        let label, rest;
+        if (colonIdx > 0 && colonIdx < 70) {
           label = trimmed.slice(0, colonIdx + 1);
           rest = trimmed.slice(colonIdx + 1).trim();
+        } else {
+          // No colon — whole line is the category text (e.g. "Чакра в ресурсе, энергия...")
+          label = labelRaw;
+          rest = trimmed.slice(labelRaw.length).trim();
         }
         html += `<div class="desc-block"><span class="desc-cat ${cls}">${icon} ${label}</span>${rest ? ' <span class="desc-body">' + rest + '</span>' : ''}</div>`;
         matched = true;
