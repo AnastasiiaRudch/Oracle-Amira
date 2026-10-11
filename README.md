@@ -9,3 +9,4 @@ TODO:
 
 When cards and their text worked correctly:
 After this build https://github.com/AnastasiiaRudch/Oracle-Amira/actions/runs/38147274644 
+(Як виправлено: кожна картка тепер визначається за своїм заголовком у PDF, а текст обрізається на маркері "Ответ: да/нет" — жодних перетікань між картками. Всі 158 карток містять "Ответ:" в кінці опису.)
