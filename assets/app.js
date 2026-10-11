@@ -96,7 +96,7 @@ function renderCardPicker(){
   });
   document.getElementById('cpk-grid').innerHTML=filtered.map(({c,i})=>{
     const already=inSpread.has(i)&&!(mode==='replace'&&s&&s.cards[pos]===i);
-    return `<div class="cpk-card${already?' cpk-in':''}" onclick="pickCard(${i})">
+    return `<div class="cpk-card${already?' cpk-in':''}" ${already?'':'onclick="pickCard('+i+')"'}>
       <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
       <div class="cpk-name">${c.name}</div>
       ${already?'<div class="cpk-badge">✓</div>':''}
@@ -142,22 +142,19 @@ function renderSaved(){
     let cardsHtml='';
     if(isOpen){
       if(isEditing){
-        // Edit mode: ✕ + ⇄ on cards, ＋ between cards
-        let inner='<div class="sv-add-row"><button class="sv-add-btn" onclick="openCardPicker(\''+s.id+'\',\'add\',0)">＋</button></div>';
-        s.cards.forEach((ci,pos)=>{
+        // Edit mode: ✕ + ⇄ on cards, single ＋ at the end
+        let inner=s.cards.map((ci,pos)=>{
           const c=CARDS[ci];
-          inner+=`<div class="sv-card-wrap">
-            <div class="sv-card sv-card-edit">
-              <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
-              <div class="sv-card-name">${c.name}</div>
-              <div class="sv-card-actions">
-                <button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${pos})">✕</button>
-                <button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${pos})">⇄</button>
-              </div>
+          return `<div class="sv-card sv-card-edit">
+            <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
+            <div class="sv-card-name">${c.name}</div>
+            <div class="sv-card-actions">
+              <button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${pos})">✕</button>
+              <button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${pos})">⇄</button>
             </div>
-            <div class="sv-add-row"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${pos+1})">＋</button></div>
           </div>`;
-        });
+        }).join('');
+        inner+=`<div class="sv-add-tile"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${s.cards.length})">＋</button></div>`;
         cardsHtml=`<div class="sv-cards sv-cards-edit">${inner}</div>`;
       } else {
         cardsHtml=`<div class="sv-cards">${s.cards.map((i,pos)=>{
