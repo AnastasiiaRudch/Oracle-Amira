@@ -196,7 +196,7 @@ function renderSaved(){
         if(!ng.length){
           // No groups — show all cards, then add-label button at bottom
           inner+=s.cards.map((ci,p)=>mkSvCard(ci,p)).join('');
-          inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Додати мітку</button></div>`;
+          inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
         } else {
           for(let gi=0;gi<ng.length;gi++){
             const g=ng[gi];const gStart=cardPos;
@@ -419,8 +419,8 @@ function normalizeGroups(cards, groups){
       }
     }
   }
-  // Remove unlabeled groups with count=0 (empty unlabeled groups are just noise)
-  return result.filter(g=>g.count>0||g.label);
+  // Remove unlabeled groups with count=0 — but keep the LAST group always (it may be a newly added empty label)
+  return result.filter((g,i)=>g.count>0||g.label||(i===result.length-1));
 }
 // Build flat array of {type:'label',text} | {type:'card',cardIdx,pos} for rendering
 function buildGroupedRows(cards, groups){
@@ -508,12 +508,20 @@ function spAddGroup(){
     // No groups yet — put all existing cards in first group, then new empty group
     spreadGroups=[{label:'',count:spread.length},{label:'',count:0}];
   } else {
-    // Just append a new empty group at the end
+    // Normalize first, then append a new empty group (avoid double-appending)
     const ng=normalizeGroups(spread,spreadGroups);
-    ng.push({label:'',count:0});
+    // Only append if the last group already has a label or has cards
+    const last=ng[ng.length-1];
+    if(last&&!last.label&&last.count===0){/* already have empty group, just focus it */}
+    else{ng.push({label:'',count:0});}
     spreadGroups=ng;
   }
   renderSpread();
+  // Auto-focus the last group input
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('#sgrid .sp-group-input');
+    if(inputs.length)inputs[inputs.length-1].focus();
+  },30);
 }
 function spRemoveGroup(startPos){
   const ng=normalizeGroups(spread,spreadGroups);
@@ -679,10 +687,21 @@ function svAddGroupNew(id){
     s.groups=[{label:'',count:s.cards.length},{label:'',count:0}];
   } else {
     const ng=normalizeGroups(s.cards,s.groups);
-    ng.push({label:'',count:0});
+    const last=ng[ng.length-1];
+    if(last&&!last.label&&last.count===0){/* already have empty group, just focus it */}
+    else{ng.push({label:'',count:0});}
     s.groups=ng;
   }
   storeSaved(arr);renderSaved();
+  // Auto-focus the last group input in this saved spread
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll(`.sv-edit-groups-${id} .sv-group-input, [data-sid="${id}"] .sv-group-input`);
+    if(inputs.length)inputs[inputs.length-1].focus();
+    else{// fallback: find last sv-group-input in any saved spread edit block
+      const all=document.querySelectorAll('.sv-group-input');
+      if(all.length)all[all.length-1].focus();
+    }
+  },30);
 }
 
 function renderSpread(){
@@ -694,13 +713,13 @@ function renderSpread(){
   let html='';let cardPos=0;
   const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
   if(!ng.length){
-    // No groups — show add-first-label button, then all cards
+    // No groups — show all cards then single add-label button
     html+=spread.map((i,p)=>mkCard(i,p)).join('');
-    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Додати мітку</button></div>`;
+    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
   } else {
     for(let gi=0;gi<ng.length;gi++){
       const g=ng[gi];const gStart=cardPos;
-      // Group header — also a drop target
+      // Group header — also a drop target (shown even if count=0 so user can type label name)
       html+=`<div class="sp-group-row"><div class="sp-group-label-wrap sp-group-droptarget" ondragover="spDragOver(event,${cardPos})" ondragleave="spDragLeave(event)" ondrop="spDropGroup(event,${gi})"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
       for(let j=0;j<g.count;j++){
         html+=mkCard(spread[cardPos],cardPos);
