@@ -91,13 +91,15 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:20px}
 .mov.on{display:flex}
 .modal{background:var(--cbg);border:1px solid var(--bdr);border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(201,168,76,.2);animation:mi .25s ease}
+.modal-close-bar{position:sticky;top:0;z-index:20;display:flex;justify-content:flex-end;padding:8px 10px 0;pointer-events:none;background:linear-gradient(to bottom,rgba(28,22,40,1) 60%,rgba(28,22,40,0) 100%)}
+.modal-close-bar .mclose{pointer-events:all}
 @keyframes mi{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
 .modal-top{display:flex;overflow-y:auto;flex:1}
 .mimg{width:200px;min-width:200px;object-fit:cover;border-radius:16px 0 0 0}
 .mbody{padding:24px 24px 24px 20px;flex:1;overflow-y:auto}
 .mbadge{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;padding:3px 10px;border-radius:10px;font-weight:600;display:inline-block;margin-bottom:10px}
-.mclose{float:right;background:rgba(201,168,76,.1);border:1px solid var(--bdr);color:var(--acc);border-radius:50%;width:30px;height:30px;font-size:.9rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .2s;margin-bottom:8px}
-.mclose:hover{background:rgba(201,168,76,.28)}
+.mclose{background:rgba(22,18,31,.85);border:1px solid rgba(201,168,76,.4);color:var(--acc);border-radius:50%;width:34px;height:34px;font-size:.95rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .2s,box-shadow .2s;backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.mclose:hover{background:rgba(201,168,76,.28);box-shadow:0 0 0 2px rgba(201,168,76,.3)}
 .mtitle{font-family:'Cinzel',serif;font-size:1.45rem;font-weight:700;margin-bottom:3px;line-height:1.2}
 .mnum{font-family:'Cinzel',serif;font-size:.88rem;color:var(--acc);margin-bottom:15px}
 .mdesc{font-size:.94rem;line-height:1.75;color:#c8c0d8}
