@@ -673,25 +673,47 @@ function spDropGroup(e,toGi){
 function spMoveCard(fromPos,toPos,toGiOverride){
   const ng=normalizeGroups(spread,spreadGroups);
   let cursor=0,fromGi=-1,toGi=-1;
+  // Calculate group start positions
+  const gStart=[];let s=0;
+  for(let gi=0;gi<ng.length;gi++){gStart[gi]=s;s+=ng[gi].count;}
   for(let gi=0;gi<ng.length;gi++){
     for(let j=0;j<ng[gi].count;j++){
-      if(cursor===fromPos)fromGi=gi;
-      if(toPos>=0&&cursor===toPos)toGi=gi;
-      cursor++;
+      if(gStart[gi]+j===fromPos)fromGi=gi;
+      if(toPos>=0&&gStart[gi]+j===toPos)toGi=gi;
     }
   }
   if(toGiOverride!==null)toGi=toGiOverride;
   const cardIdx=spread[fromPos];
+  const movedLabel=spreadLabels[fromPos]||'';
   const newSpread=[...spread];
   newSpread.splice(fromPos,1);
   let insertAt;
-  if(toPos>=0){insertAt=toPos>fromPos?toPos-1:toPos;}
-  else{// append to end of toGi
-    let c=0;for(let gi=0;gi<=toGi;gi++)c+=ng[gi].count;
-    insertAt=Math.max(0,c-1+(toGi>fromGi?0:-1));
+  if(toPos>=0){
+    insertAt=toPos>fromPos?toPos-1:toPos;
+  } else {
+    // Drop onto group header → insert at END of that group
+    // After removing fromPos, calculate end of toGi in new array
+    let endOfGroup=0;
+    for(let gi=0;gi<=toGi;gi++){
+      endOfGroup+=ng[gi].count;
+      if(gi===fromGi)endOfGroup--; // card already removed from this group
+    }
+    insertAt=endOfGroup; // insert after all cards in toGi
   }
   newSpread.splice(insertAt,0,cardIdx);
   spread=newSpread;
+  // Shift labels around the move
+  const newLabels={};
+  const totalOld=spread.length; // already after splice back in
+  for(let p=0;p<totalOld;p++){
+    const orig=spreadLabels[p];if(!orig||p===fromPos)continue;
+    let np=p;
+    if(p>fromPos)np--;
+    if(np>=insertAt)np++;
+    newLabels[np]=orig;
+  }
+  if(movedLabel)newLabels[insertAt]=movedLabel;
+  spreadLabels=newLabels;
   if(ng.length&&fromGi>=0&&toGi>=0&&fromGi!==toGi){
     ng[fromGi].count--;ng[toGi].count++;
     spreadGroups=ng.filter(g=>g.count>0||g.label);
@@ -719,38 +741,40 @@ function svDropGroup(e,sid,toGi){
 function svMoveCard(sid,fromPos,toPos,toGiOverride){
   const arr=loadSaved();const s=arr.find(x=>x.id===sid);if(!s)return;
   const ng=normalizeGroups(s.cards,s.groups||[]);
-  let cursor=0,fromGi=-1,toGi=-1;
+  // Pre-calculate group start positions
+  const gStart=[];let gs=0;
+  for(let gi=0;gi<ng.length;gi++){gStart[gi]=gs;gs+=ng[gi].count;}
+  let fromGi=-1,toGi=-1;
   for(let gi=0;gi<ng.length;gi++){
-    for(let j=0;j<ng[gi].count;j++){
-      if(cursor===fromPos)fromGi=gi;
-      if(toPos>=0&&cursor===toPos)toGi=gi;
-      cursor++;
-    }
+    if(fromPos>=gStart[gi]&&fromPos<gStart[gi]+ng[gi].count)fromGi=gi;
+    if(toPos>=0&&toPos>=gStart[gi]&&toPos<gStart[gi]+ng[gi].count)toGi=gi;
   }
   if(toGiOverride!==null)toGi=toGiOverride;
   const cardIdx=s.cards[fromPos];
-  // Move label along with card
   const movedLabel=(s.labels&&s.labels[fromPos])||'';
   s.cards.splice(fromPos,1);
   let insertAt;
   if(toPos>=0){
     insertAt=toPos>fromPos?toPos-1:toPos;
   } else {
-    // Drop onto group header → insert at END of that group
-    let c=0;for(let gi=0;gi<=toGi;gi++)c+=ng[gi].count;
-    insertAt=c-1+(toGi>fromGi?0:-1);
-    insertAt=Math.max(0,insertAt);
+    // Drop onto group header → insert at END of that group (after card is removed)
+    let endOfGroup=0;
+    for(let gi=0;gi<=toGi;gi++){
+      endOfGroup+=ng[gi].count;
+      if(gi===fromGi)endOfGroup--; // card already removed from this group
+    }
+    insertAt=endOfGroup;
   }
   s.cards.splice(insertAt,0,cardIdx);
   // Rebuild labels: shift positions around the move
   if(s.labels){
     const newLabels={};
-    const oldLen=s.cards.length; // already after splice
-    for(let p=0;p<oldLen+1;p++){
+    const totalNew=s.cards.length;
+    for(let p=0;p<totalNew+1;p++){
       const orig=s.labels[p];if(!orig||p===fromPos)continue;
       let np=p;
-      if(p>fromPos)np--;
-      if(np>=insertAt)np++;
+      if(p>fromPos)np--;   // shift left after removal
+      if(np>=insertAt)np++; // shift right after insertion
       newLabels[np]=orig;
     }
     if(movedLabel)newLabels[insertAt]=movedLabel;
