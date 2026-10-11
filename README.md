@@ -4,6 +4,7 @@ TODO:
 3. Add login and DB - to save layout(rozklad)
 4. Add above every card question(So it will be comfortable in layout to understand question-card)
 5. Add ability to save every layout with name, read, edit, delete, share(read access only)
+6. Додати готові розклади - на негатив, на чакри і т.д.
 
 
 
