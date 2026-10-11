@@ -24,8 +24,8 @@ const CAT_MAP = [
   { pat: /^(Магия\s*:)/i,                                  icon:'🔮', cls:'cat-mag' },
   { pat: /^(Не магическая трактовка\s*:)/i,                icon:'🔮', cls:'cat-mag' },
   // Chakra — covers "Чакра:", "Чакры:", and "Чакра в ресурсе..." (no colon)
-  { pat: /^(Чакры?\s*:)/i,                                 icon:'✨', cls:'cat-chk' },
-  { pat: /^(Чакра\b)/i,                                    icon:'✨', cls:'cat-chk' },
+  // Note: \b doesn't work with Cyrillic in JS, so use lookahead instead
+  { pat: /^(Чакр[аы](?=[\s:,.]|$))/i,                     icon:'✨', cls:'cat-chk' },
   // Answer
   { pat: /^(Отве[тТ]?[еЕ]?\s*:.+)/i,                      icon:'🌟', cls:'cat-ans' },
   // Advice
