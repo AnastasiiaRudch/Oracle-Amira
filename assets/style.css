@@ -97,7 +97,30 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .mclose:hover{background:rgba(201,168,76,.28)}
 .mtitle{font-family:'Cinzel',serif;font-size:1.45rem;font-weight:700;margin-bottom:3px;line-height:1.2}
 .mnum{font-family:'Cinzel',serif;font-size:.88rem;color:var(--acc);margin-bottom:15px}
-.mdesc{font-size:.94rem;line-height:1.75;color:#c8c0d8;white-space:pre-line}
+.mdesc{font-size:.94rem;line-height:1.75;color:#c8c0d8}
+
+/* Formatted description blocks */
+.desc-block{margin:10px 0 4px}
+.desc-line{margin:0 0 2px;color:#c8c0d8;font-size:.94rem;line-height:1.7}
+.desc-line:first-child{margin-top:0}
+.desc-body{color:#c8c0d8;font-size:.94rem}
+.desc-cat{display:inline-block;font-family:'Cinzel',serif;font-size:.76rem;font-weight:700;letter-spacing:.04em;padding:3px 10px 3px 8px;border-radius:5px;margin-bottom:4px;line-height:1.4}
+
+/* Category colors */
+.cat-rel{background:rgba(210,80,120,.18);color:#e88fab;border-left:3px solid #c94d78}
+.cat-mon{background:rgba(201,168,76,.16);color:#d4b052;border-left:3px solid #c9a84c}
+.cat-per{background:rgba(77,139,201,.18);color:#7ab0e0;border-left:3px solid #4d8bc9}
+.cat-hlt{background:rgba(80,185,100,.15);color:#74c987;border-left:3px solid #4ab868}
+.cat-mag{background:rgba(155,77,201,.2);color:#c086e8;border-left:3px solid #9b4dc9}
+.cat-chk{background:rgba(160,130,220,.16);color:#b8a0e8;border-left:3px solid #9b7de0}
+.cat-ans{background:rgba(201,168,76,.22);color:#e8c84a;border-left:3px solid #c9a84c;font-size:.82rem;padding:5px 12px}
+.cat-adv{background:rgba(220,160,80,.15);color:#d4a060;border-left:3px solid #c98030}
+
+/* Compact styles for spread card desc */
+.scard-desc.formatted .desc-block{margin:5px 0 2px}
+.scard-desc.formatted .desc-cat{font-size:.65rem;padding:2px 7px 2px 6px}
+.scard-desc.formatted .desc-line{font-size:.79rem}
+.scard-desc.formatted .desc-body{font-size:.79rem}
 .mfoot{padding:14px 20px;border-top:1px solid var(--bdr);flex-shrink:0}
 .madd{width:100%;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.36);color:var(--acc);border-radius:9px;padding:10px;font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.06em;cursor:pointer;transition:all .2s}
 .madd:hover{background:rgba(201,168,76,.26)}

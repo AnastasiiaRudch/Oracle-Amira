@@ -1,5 +1,74 @@
 let fblock='all', fsearch='', spread=[], mIdx=-1;
 
+// Category formatting for card descriptions
+const CAT_MAP = [
+  // Relationships
+  { pat: /^(В вопросах взаимоотношени[яхй][а-я]*\s*:)/i, icon:'💞', cls:'cat-rel' },
+  { pat: /^(Вопросы взаимоотношений\s*:)/i,               icon:'💞', cls:'cat-rel' },
+  { pat: /^(В вопросах отношений\s*:)/i,                   icon:'💞', cls:'cat-rel' },
+  { pat: /^(Отношения\s*:)/i,                              icon:'💞', cls:'cat-rel' },
+  // Career & money
+  { pat: /^(Карьера и денежные дела\s*:)/i,                icon:'💰', cls:'cat-mon' },
+  { pat: /^(Карьера и деньги\s*:)/i,                       icon:'💰', cls:'cat-mon' },
+  { pat: /^(Карьера и денежные вопросы\s*:)/i,             icon:'💰', cls:'cat-mon' },
+  { pat: /^(Карьера и денежный вопрос\s*:)/i,              icon:'💰', cls:'cat-mon' },
+  { pat: /^(Карьера\s*:)/i,                                icon:'💰', cls:'cat-mon' },
+  // Personality
+  { pat: /^(Характеристика личности\s*:)/i,                icon:'👤', cls:'cat-per' },
+  // Health
+  { pat: /^(Здоровье\s*:)/i,                               icon:'🌿', cls:'cat-hlt' },
+  { pat: /^(В вопросах здоровья\s*:)/i,                    icon:'🌿', cls:'cat-hlt' },
+  // Magic
+  { pat: /^(В вопросах магии\s*:)/i,                       icon:'🔮', cls:'cat-mag' },
+  { pat: /^(В магических вопросах\s*:)/i,                  icon:'🔮', cls:'cat-mag' },
+  { pat: /^(Магия\s*:)/i,                                  icon:'🔮', cls:'cat-mag' },
+  { pat: /^(Не магическая трактовка\s*:)/i,                icon:'🔮', cls:'cat-mag' },
+  // Chakra
+  { pat: /^(Чакры?\s*:)/i,                                 icon:'✨', cls:'cat-chk' },
+  { pat: /^(Чакра\b.*)/i,                                  icon:'✨', cls:'cat-chk' },
+  // Answer
+  { pat: /^(Отве[тТ]?[еЕ]?\s*:.+)/i,                      icon:'🌟', cls:'cat-ans' },
+  // Advice
+  { pat: /^(Совет от карт\s*:)/i,                          icon:'🕯️', cls:'cat-adv' },
+  { pat: /^(Совет карты\s*:)/i,                            icon:'🕯️', cls:'cat-adv' },
+  { pat: /^(Как вести себя\s*:)/i,                         icon:'🕯️', cls:'cat-adv' },
+  { pat: /^(В магии\s*:)/i,                               icon:'🔮', cls:'cat-mag' },
+  { pat: /^(Особенность карты\s*:)/i,                     icon:'🕯️', cls:'cat-adv' },
+  { pat: /^(Соответствие\s*:)/i,                          icon:'🕯️', cls:'cat-adv' },
+  { pat: /^(Дополняет информацию[^:]*:)/i,               icon:'🔮', cls:'cat-mag' },
+  { pat: /^(Карта может показать[^:]*:)/i,               icon:'🕯️', cls:'cat-adv' },
+];
+
+function formatDesc(text) {
+  // Split into lines, detect category headers, wrap them
+  const lines = text.split('\n');
+  let html = '';
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { html += '<br>'; continue; }
+    let matched = false;
+    for (const {pat, icon, cls} of CAT_MAP) {
+      const m = trimmed.match(pat);
+      if (m) {
+        // Split "Category: rest of text" — colon may or may not be in match
+        const colonIdx = trimmed.indexOf(':');
+        let label = trimmed, rest = '';
+        if (colonIdx > 0 && colonIdx < 60) {
+          label = trimmed.slice(0, colonIdx + 1);
+          rest = trimmed.slice(colonIdx + 1).trim();
+        }
+        html += `<div class="desc-block"><span class="desc-cat ${cls}">${icon} ${label}</span>${rest ? ' <span class="desc-body">' + rest + '</span>' : ''}</div>`;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      html += `<p class="desc-line">${trimmed}</p>`;
+    }
+  }
+  return html;
+}
+
 function bLabel(b){return b==='Леноран'?'Ленорман':b==='Загальний'?'Загальний':'Магічний'}
 function bColor(b){return b==='Леноран'?'#4d8bc9':b==='Загальний'?'#c97a4d':'#9b4dc9'}
 function inS(i){return spread.includes(i)}
@@ -70,7 +139,7 @@ function renderSpread(){
         <div class="scard-num">№${c.num} · ${bLabel(c.block)}</div>
         <div class="scard-name">${c.name}</div>
         <div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div>
-        <div class="scard-desc">${c.desc}</div>
+        <div class="scard-desc formatted">${formatDesc(c.desc)}</div>
       </div>
       <button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити з розкладу</button>
     </div>`;
@@ -85,7 +154,7 @@ function openM(i){
   mb.textContent=bLabel(c.block);mb.className='mbadge b-'+c.block;
   document.getElementById('mtitle').textContent=c.name;
   document.getElementById('mnum').textContent='Карта №'+c.num+' · '+bLabel(c.block)+' блок';
-  document.getElementById('mdesc').textContent=c.desc;
+  document.getElementById('mdesc').innerHTML=formatDesc(c.desc);
   updMBtn();
   document.getElementById('mov').classList.add('on');
   document.body.style.overflow='hidden';
