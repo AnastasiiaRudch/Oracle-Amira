@@ -17,6 +17,7 @@
 <nav class="topnav">
   <button class="tnav-btn active" data-pg="cat">🃏 Каталог карт</button>
   <button class="tnav-btn" data-pg="sp">✨ Мій розклад&nbsp;<span class="spread-pill" id="spill">0</span></button>
+  <button class="tnav-btn" data-pg="saved">📚 Збережені</button>
 </nav>
 
 <!-- CATALOG PAGE -->
@@ -47,7 +48,15 @@
   <div id="sp-inner">
     <div class="sp-hdr">
       <div class="sp-title">✨ Мій розклад <span class="spread-pill" id="spill2" style="font-size:.75rem;padding:3px 10px">0</span></div>
-      <button class="btn-clear" onclick="clearSpread()">🗑&nbsp; Видалити розклад</button>
+      <div class="sp-actions">
+        <button class="btn-save" onclick="openSaveDialog()">💾&nbsp; Зберегти</button>
+        <button class="btn-clear" onclick="clearSpread()">🗑&nbsp; Очистити</button>
+      </div>
+    </div>
+    <div id="sp-name-bar" class="sp-name-bar" style="display:none">
+      <span class="sp-name-label">📂</span>
+      <span id="sp-name-text"></span>
+      <button class="sp-name-close" onclick="detachSaved()" title="Відв'язати від збереженого">✕</button>
     </div>
     <div id="semp" class="sp-empty">
       <div class="s">🌙</div>
@@ -55,6 +64,33 @@
       <span>Перейдіть до каталогу і натисніть «＋ До розкладу» поруч із карткою</span>
     </div>
     <div id="sgrid"></div>
+  </div>
+</div>
+
+<!-- SAVED SPREADS PAGE -->
+<div class="page" id="saved">
+  <div id="saved-inner">
+    <div class="saved-hdr">
+      <div class="saved-title">📚 Збережені розклади</div>
+    </div>
+    <div id="saved-empty" class="sp-empty">
+      <div class="s">📂</div>
+      <p>Немає збережених розкладів</p>
+      <span>Перейдіть до «Мій розклад» і натисніть «💾 Зберегти»</span>
+    </div>
+    <div id="saved-list"></div>
+  </div>
+</div>
+
+<!-- SAVE DIALOG -->
+<div class="sdlg-ov" id="sdlg-ov">
+  <div class="sdlg">
+    <div class="sdlg-title">💾 Зберегти розклад</div>
+    <input type="text" id="sdlg-input" class="sdlg-inp" placeholder="Назва розкладу..." maxlength="60" autocomplete="off">
+    <div class="sdlg-btns">
+      <button class="sdlg-cancel" onclick="closeSaveDialog()">Скасувати</button>
+      <button class="sdlg-ok" onclick="confirmSave()">Зберегти</button>
+    </div>
   </div>
 </div>
 

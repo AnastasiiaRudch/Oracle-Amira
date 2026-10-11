@@ -131,9 +131,58 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .madd:hover{background:rgba(201,168,76,.26)}
 .madd.ins{background:rgba(201,168,76,.3)}
 
+/* SPREAD ACTIONS */
+.sp-actions{display:flex;gap:8px}
+.btn-save{background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.4);color:var(--acc);border-radius:8px;padding:7px 14px;font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.05em;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-save:hover{background:rgba(201,168,76,.28)}
+
+/* SAVED NAME BAR */
+.sp-name-bar{display:flex;align-items:center;gap:8px;padding:7px 20px;background:rgba(201,168,76,.07);border-bottom:1px solid rgba(201,168,76,.18);font-size:.85rem;color:var(--acc)}
+.sp-name-label{font-size:1rem}
+#sp-name-text{flex:1;font-style:italic}
+.sp-name-close{background:none;border:none;color:var(--mut);cursor:pointer;font-size:.8rem;padding:2px 5px;border-radius:4px;transition:color .15s}
+.sp-name-close:hover{color:var(--txt)}
+
+/* SAVED PAGE */
+#saved-inner{max-width:860px;margin:0 auto;padding:24px 20px}
+.saved-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.saved-title{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:600;color:var(--acc);letter-spacing:.06em}
+#saved-list{display:flex;flex-direction:column;gap:12px}
+.sv-item{background:var(--cbg);border:1px solid var(--bdr);border-radius:12px;padding:16px;transition:border-color .2s}
+.sv-item:hover{border-color:rgba(201,168,76,.4)}
+.sv-item.sv-active{border-color:rgba(201,168,76,.6);background:rgba(201,168,76,.04)}
+.sv-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.sv-name{font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;color:var(--txt);margin-bottom:3px}
+.sv-meta{font-size:.8rem;color:var(--mut)}
+.sv-btns{display:flex;gap:7px;flex-shrink:0}
+.sv-btn{border-radius:7px;padding:6px 12px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.04em;cursor:pointer;transition:all .2s;border:1px solid var(--bdr)}
+.sv-load{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.36);color:var(--acc)}
+.sv-load:hover{background:rgba(201,168,76,.28)}
+.sv-del{background:rgba(201,77,77,.1);border-color:rgba(201,77,77,.3);color:#e07070}
+.sv-del:hover{background:rgba(201,77,77,.25)}
+.sv-preview{display:flex;align-items:center;gap:6px}
+.sv-preview img{width:38px;height:62px;object-fit:cover;border-radius:5px;border:1px solid var(--bdr)}
+.sv-more{color:var(--mut);font-size:.85rem;margin-left:4px}
+
+/* SAVE DIALOG */
+.sdlg-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:2000;align-items:center;justify-content:center;padding:20px}
+.sdlg-ov.on{display:flex}
+.sdlg{background:var(--cbg);border:1px solid var(--bdr);border-radius:14px;padding:28px 24px 22px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.sdlg-title{font-family:'Cinzel',serif;font-size:1rem;font-weight:600;color:var(--acc);margin-bottom:18px;letter-spacing:.06em}
+.sdlg-inp{width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;color:var(--txt);font-family:'Crimson Pro',serif;font-size:1.05rem;padding:10px 14px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:18px}
+.sdlg-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
+.sdlg-inp::placeholder{color:var(--mut)}
+.sdlg-btns{display:flex;gap:10px;justify-content:flex-end}
+.sdlg-cancel{background:none;border:1px solid var(--bdr);color:var(--mut);border-radius:8px;padding:8px 18px;font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.05em;cursor:pointer;transition:all .2s}
+.sdlg-cancel:hover{border-color:var(--mut);color:var(--txt)}
+.sdlg-ok{background:var(--acc);border:none;color:#0d0b14;border-radius:8px;padding:8px 20px;font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.05em;font-weight:700;cursor:pointer;transition:all .2s}
+.sdlg-ok:hover{background:#d4b052}
+
 @media(max-width:600px){
   .modal-top{flex-direction:column}
   .mimg{width:100%;min-width:unset;height:220px;border-radius:16px 16px 0 0}
   #grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
   #sgrid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))}
+  .sv-top{flex-direction:column}
+  .sv-btns{width:100%;justify-content:flex-end}
 }
