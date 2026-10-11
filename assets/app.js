@@ -3,6 +3,8 @@ let fblock='all', fsearch='', spread=[], mIdx=-1;
 let editingId=null, editReplaceIdx=null; // editReplaceIdx: card position to replace (null = add)
 // Draft spread groups: [{label:string, count:number}]
 let spreadGroups=[];
+// Draft spread card labels: {pos: string}
+let spreadLabels={};
 
 // ── SAVED SPREADS (localStorage) ──────────────────────────────────────────
 const LS_KEY='oracle_saved_spreads';
@@ -25,9 +27,9 @@ function confirmSave(){
   const name=document.getElementById('sdlg-input').value.trim();
   if(!name)return;
   const arr=loadSaved();
-  arr.push({id:'sp_'+Date.now(),name,cards:spread.slice(),groups:spreadGroups.slice(),date:Date.now()});
+  arr.push({id:'sp_'+Date.now(),name,cards:spread.slice(),groups:spreadGroups.slice(),labels:Object.assign({},spreadLabels),date:Date.now()});
   storeSaved(arr);
-  spread=[];spreadGroups=[];
+  spread=[];spreadGroups=[];spreadLabels={};
   updCount();
   renderCatalog();
   renderSpread();
@@ -90,10 +92,24 @@ function svRemoveCard(id,pos){
     }
     s.groups=merged.length===1&&!merged[0].label?[]:merged;
   }
+  // Shift labels after removed position
+  if(s.labels){
+    const newLabels={};
+    Object.keys(s.labels).forEach(k=>{const ki=parseInt(k);if(ki<pos&&s.labels[k])newLabels[ki]=s.labels[k];else if(ki>pos&&s.labels[k])newLabels[ki-1]=s.labels[k];});
+    s.labels=newLabels;
+  }
   s.cards.splice(pos,1);
   s.date=Date.now();
   storeSaved(arr);
   renderSaved();
+}
+
+// Set individual card label for a saved spread
+function svSetCardLabel(id,pos,val){
+  const arr=loadSaved();const s=arr.find(x=>x.id===id);if(!s)return;
+  if(!s.labels)s.labels={};
+  if(val)s.labels[pos]=val;else delete s.labels[pos];
+  storeSaved(arr);
 }
 
 // Open card-picker popup: mode 'add'|'replace', for spread id, at position pos
@@ -228,7 +244,7 @@ function renderSaved(){
         // Edit mode: group headers (editable), cards with ✕/⇄, split buttons between groups
         const ng=normalizeGroups(s.cards,s.groups||[]);
         let inner='';let cardPos=0;
-        const mkSvCard=(ci,p)=>{const c=CARDS[ci];return `<div class="sv-card sv-card-edit" draggable="true" ondragstart="svDragStart(event,'${s.id}',${p})" ondragend="svDragEnd(event)" ondragover="svDragOver(event)" ondragleave="svDragLeave(event)" ondrop="svDrop(event,'${s.id}',${p})"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-badge" style="background:${bColor(c.block)}22;color:${bColor(c.block)};border:1px solid ${bColor(c.block)}55">${bLabel(c.block)}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div>`;};
+        const mkSvCard=(ci,p)=>{const c=CARDS[ci];const lbl=(s.labels&&s.labels[p])||'';return `<div class="sv-card-wrap"><input class="card-label-input" placeholder="Мітка картки…" value="${lbl.replace(/"/g,'&quot;')}" oninput="svSetCardLabel('${s.id}',${p},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"><div class="sv-card sv-card-edit" draggable="true" ondragstart="svDragStart(event,'${s.id}',${p})" ondragend="svDragEnd(event)" ondragover="svDragOver(event)" ondragleave="svDragLeave(event)" ondrop="svDrop(event,'${s.id}',${p})"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-badge" style="background:${bColor(c.block)}22;color:${bColor(c.block)};border:1px solid ${bColor(c.block)}55">${bLabel(c.block)}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div></div>`;};
         const mkSvAddTile=(sid,gi)=>`<div class="sv-add-card-tile" onclick="openCardPicker('${sid}','add-to-group',-1);document.getElementById('cpk-ov').dataset.gi='${gi}'"><span>＋</span></div>`;
         if(!ng.length){
           // No groups — cards + inline + tile + new-label button
@@ -260,11 +276,12 @@ function renderSaved(){
             inner+=`<div class="sv-group-label">${row.text}</div>`;
           } else {
             const c=CARDS[row.cardIdx];
-            inner+=`<div class="sv-card" onclick="openM(${row.cardIdx})">
+            const lbl=(s.labels&&s.labels[row.pos])||'';
+            inner+=`<div class="sv-card-wrap">${lbl?`<div class="card-label-display">${lbl}</div>`:''}<div class="sv-card" onclick="openM(${row.cardIdx})">
               <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
               <div class="sv-card-name">${c.name}</div>
               <div class="sv-card-badge" style="background:${bColor(c.block)}22;color:${bColor(c.block)};border:1px solid ${bColor(c.block)}55">${bLabel(c.block)}</div>
-            </div>`;
+            </div></div>`;
           }
         }
         cardsHtml=`<div class="sv-cards">${inner}</div>`;
@@ -426,9 +443,15 @@ function removeS(i){
     }
     spreadGroups=merged.length===1&&!merged[0].label?[]:merged;
   }
+  // Shift spreadLabels after removed position
+  if(pos>=0){
+    const newLabels={};
+    Object.keys(spreadLabels).forEach(k=>{const ki=parseInt(k);if(ki<pos&&spreadLabels[k])newLabels[ki]=spreadLabels[k];else if(ki>pos&&spreadLabels[k])newLabels[ki-1]=spreadLabels[k];});
+    spreadLabels=newLabels;
+  }
   updCount();renderCatalog();renderSpread();
 }
-function clearSpread(){spread=[];spreadGroups=[];updCount();renderCatalog();renderSpread();}
+function clearSpread(){spread=[];spreadGroups=[];spreadLabels={};updCount();renderCatalog();renderSpread();}
 
 // ── GROUP/LABEL HELPERS ───────────────────────────────────────────────────────
 // Normalize groups so their counts sum exactly to cards.length, no negatives.
@@ -751,7 +774,7 @@ function renderSpread(){
   empty.style.display='none';
   const ng=normalizeGroups(spread,spreadGroups);
   let html='';let cardPos=0;
-  const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
+  const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);const lbl=spreadLabels[pos]||'';return `<div class="scard-wrap"><input class="card-label-input" placeholder="Мітка картки…" value="${lbl.replace(/"/g,'&quot;')}" oninput="spreadLabels[${pos}]=this.value" onclick="event.stopPropagation()"><div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div></div>`;};
   if(!ng.length){
     // No groups — cards then a small add button row
     html+=spread.map((i,p)=>mkCard(i,p)).join('');
