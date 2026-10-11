@@ -1,4 +1,4 @@
-let fblock='all', fsearch='', spread=[], mIdx=-1, currentSavedId=null;
+let fblock='all', fsearch='', spread=[], mIdx=-1;
 
 // ── SAVED SPREADS (localStorage) ──────────────────────────────────────────
 const LS_KEY='oracle_saved_spreads';
@@ -7,11 +7,9 @@ function storeSaved(arr){try{localStorage.setItem(LS_KEY,JSON.stringify(arr))}ca
 
 function openSaveDialog(){
   if(!spread.length){alert('Розклад порожній — додайте картки перед збереженням.');return;}
-  const inp=document.getElementById('sdlg-input');
-  // Pre-fill with current spread name if editing a saved one
-  inp.value=currentSavedId?getSavedById(currentSavedId)?.name||'':'';
+  document.getElementById('sdlg-input').value='';
   document.getElementById('sdlg-ov').classList.add('on');
-  setTimeout(()=>inp.focus(),80);
+  setTimeout(()=>document.getElementById('sdlg-input').focus(),80);
 }
 function closeSaveDialog(){
   document.getElementById('sdlg-ov').classList.remove('on');
@@ -22,49 +20,29 @@ function confirmSave(){
   if(!name)return;
   const arr=loadSaved();
   const now=Date.now();
-  if(currentSavedId){
-    // Update existing
-    const idx=arr.findIndex(x=>x.id===currentSavedId);
-    if(idx>=0){arr[idx]={id:currentSavedId,name,cards:spread.slice(),date:now};}
-    else{arr.push({id:currentSavedId,name,cards:spread.slice(),date:now});}
-  } else {
-    const id='sp_'+now;
-    arr.push({id,name,cards:spread.slice(),date:now});
-    currentSavedId=id;
-  }
+  const id='sp_'+now;
+  arr.push({id,name,cards:spread.slice(),date:now});
   storeSaved(arr);
+  // Clear the working spread after saving
+  spread=[];
+  updCount();
+  renderCatalog();
+  renderSpread();
   closeSaveDialog();
-  updNameBar();
   renderSaved();
 }
 function getSavedById(id){return loadSaved().find(x=>x.id===id)||null}
-function loadSpread(id){
-  const s=getSavedById(id);
-  if(!s)return;
-  spread=s.cards.slice();
-  currentSavedId=id;
-  updCount();updNameBar();renderCatalog();renderSpread();
-  // Switch to spread tab
-  document.querySelectorAll('.tnav-btn').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
-  document.querySelector('.tnav-btn[data-pg="sp"]').classList.add('active');
-  document.getElementById('sp').classList.add('on');
-}
 function deleteSaved(id){
   if(!confirm('Видалити цей розклад?'))return;
   const arr=loadSaved().filter(x=>x.id!==id);
   storeSaved(arr);
-  if(currentSavedId===id){currentSavedId=null;updNameBar();}
   renderSaved();
 }
-function detachSaved(){currentSavedId=null;updNameBar();}
-function updNameBar(){
-  const bar=document.getElementById('sp-name-bar');
-  if(currentSavedId){
-    const s=getSavedById(currentSavedId);
-    if(s){document.getElementById('sp-name-text').textContent=s.name;bar.style.display='flex';return;}
-  }
-  bar.style.display='none';
+let expandedSaved=new Set();
+function toggleSavedExpand(id){
+  if(expandedSaved.has(id))expandedSaved.delete(id);
+  else expandedSaved.add(id);
+  renderSaved();
 }
 function renderSaved(){
   const arr=loadSaved();
@@ -75,21 +53,24 @@ function renderSaved(){
   list.innerHTML=arr.slice().reverse().map(s=>{
     const d=new Date(s.date);
     const dateStr=d.toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const preview=s.cards.slice(0,5).map(i=>`<img src="data:image/jpeg;base64,${CARDS[i].img}" alt="${CARDS[i].name}" title="${CARDS[i].name}">`).join('');
-    const more=s.cards.length>5?`<span class="sv-more">+${s.cards.length-5}</span>`:'';
-    const active=s.id===currentSavedId?' sv-active':'';
-    return `<div class="sv-item${active}" data-id="${s.id}">
-      <div class="sv-top">
+    const isOpen=expandedSaved.has(s.id);
+    const cardsHtml=isOpen?`<div class="sv-cards">${s.cards.map(i=>{
+      const c=CARDS[i];
+      return `<div class="sv-card" onclick="openM(${i})">
+        <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
+        <div class="sv-card-name">${c.name}</div>
+      </div>`;
+    }).join('')}</div>`:'';
+    return `<div class="sv-item" data-id="${s.id}">
+      <div class="sv-top" onclick="toggleSavedExpand('${s.id}')" style="cursor:pointer">
+        <div class="sv-chevron">${isOpen?'▾':'▸'}</div>
         <div class="sv-info">
           <div class="sv-name">${s.name}</div>
           <div class="sv-meta">${s.cards.length} карт · ${dateStr}</div>
         </div>
-        <div class="sv-btns">
-          <button class="sv-btn sv-load" onclick="loadSpread('${s.id}')">Завантажити</button>
-          <button class="sv-btn sv-del" onclick="deleteSaved('${s.id}')">🗑</button>
-        </div>
+        <button class="sv-btn sv-del" onclick="event.stopPropagation();deleteSaved('${s.id}')">🗑</button>
       </div>
-      <div class="sv-preview">${preview}${more}</div>
+      ${cardsHtml}
     </div>`;
   }).join('');
 }

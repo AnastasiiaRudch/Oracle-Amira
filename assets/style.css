@@ -136,33 +136,27 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .btn-save{background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.4);color:var(--acc);border-radius:8px;padding:7px 14px;font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.05em;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-save:hover{background:rgba(201,168,76,.28)}
 
-/* SAVED NAME BAR */
-.sp-name-bar{display:flex;align-items:center;gap:8px;padding:7px 20px;background:rgba(201,168,76,.07);border-bottom:1px solid rgba(201,168,76,.18);font-size:.85rem;color:var(--acc)}
-.sp-name-label{font-size:1rem}
-#sp-name-text{flex:1;font-style:italic}
-.sp-name-close{background:none;border:none;color:var(--mut);cursor:pointer;font-size:.8rem;padding:2px 5px;border-radius:4px;transition:color .15s}
-.sp-name-close:hover{color:var(--txt)}
-
 /* SAVED PAGE */
-#saved-inner{max-width:860px;margin:0 auto;padding:24px 20px}
+#saved-inner{max-width:960px;margin:0 auto;padding:24px 20px}
 .saved-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .saved-title{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:600;color:var(--acc);letter-spacing:.06em}
-#saved-list{display:flex;flex-direction:column;gap:12px}
-.sv-item{background:var(--cbg);border:1px solid var(--bdr);border-radius:12px;padding:16px;transition:border-color .2s}
-.sv-item:hover{border-color:rgba(201,168,76,.4)}
-.sv-item.sv-active{border-color:rgba(201,168,76,.6);background:rgba(201,168,76,.04)}
-.sv-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
-.sv-name{font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;color:var(--txt);margin-bottom:3px}
-.sv-meta{font-size:.8rem;color:var(--mut)}
-.sv-btns{display:flex;gap:7px;flex-shrink:0}
-.sv-btn{border-radius:7px;padding:6px 12px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.04em;cursor:pointer;transition:all .2s;border:1px solid var(--bdr)}
-.sv-load{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.36);color:var(--acc)}
-.sv-load:hover{background:rgba(201,168,76,.28)}
+#saved-list{display:flex;flex-direction:column;gap:10px}
+.sv-item{background:var(--cbg);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.sv-item:hover{border-color:rgba(201,168,76,.35)}
+.sv-top{display:flex;align-items:center;gap:12px;padding:14px 16px;user-select:none}
+.sv-chevron{color:var(--acc);font-size:.8rem;width:16px;flex-shrink:0}
+.sv-info{flex:1;min-width:0}
+.sv-name{font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;color:var(--txt);margin-bottom:2px}
+.sv-meta{font-size:.78rem;color:var(--mut)}
+.sv-btn{border-radius:7px;padding:6px 12px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.04em;cursor:pointer;transition:all .2s;border:1px solid var(--bdr);flex-shrink:0}
 .sv-del{background:rgba(201,77,77,.1);border-color:rgba(201,77,77,.3);color:#e07070}
 .sv-del:hover{background:rgba(201,77,77,.25)}
-.sv-preview{display:flex;align-items:center;gap:6px}
-.sv-preview img{width:38px;height:62px;object-fit:cover;border-radius:5px;border:1px solid var(--bdr)}
-.sv-more{color:var(--mut);font-size:.85rem;margin-left:4px}
+/* Accordion card grid */
+.sv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;padding:0 16px 16px;border-top:1px solid var(--bdr);margin-top:0;animation:fi .2s ease}
+.sv-card{cursor:pointer;border-radius:8px;overflow:hidden;background:var(--surf);border:1px solid var(--bdr);transition:transform .18s,border-color .18s}
+.sv-card:hover{transform:translateY(-3px);border-color:var(--acc)}
+.sv-card img{width:100%;aspect-ratio:3/5;object-fit:cover;display:block}
+.sv-card-name{font-family:'Cinzel',serif;font-size:.6rem;text-align:center;padding:5px 4px;color:var(--txt);line-height:1.3}
 
 /* SAVE DIALOG */
 .sdlg-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:2000;align-items:center;justify-content:center;padding:20px}
