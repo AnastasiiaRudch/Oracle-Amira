@@ -194,9 +194,9 @@ function renderSaved(){
         let inner='';let cardPos=0;
         const mkSvCard=(ci,p)=>{const c=CARDS[ci];return `<div class="sv-card sv-card-edit" draggable="true" ondragstart="svDragStart(event,'${s.id}',${p})" ondragend="svDragEnd(event)" ondragover="svDragOver(event)" ondragleave="svDragLeave(event)" ondrop="svDrop(event,'${s.id}',${p})"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div>`;};
         if(!ng.length){
-          // No groups — show add-label button at top, then all cards
-          inner+=`<div class="sv-add-label-tile sv-add-label-top"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Додати мітку</button></div>`;
+          // No groups — show all cards, then add-label button at bottom
           inner+=s.cards.map((ci,p)=>mkSvCard(ci,p)).join('');
+          inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Додати мітку</button></div>`;
         } else {
           for(let gi=0;gi<ng.length;gi++){
             const g=ng[gi];const gStart=cardPos;
@@ -206,9 +206,9 @@ function renderSaved(){
               inner+=mkSvCard(s.cards[cardPos],cardPos);
               cardPos++;
             }
-            // "Add new label" after each group
-            inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
           }
+          // Single "add new label" button at the bottom
+          inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
         }
         inner+=`<div class="sv-add-tile"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${s.cards.length})">＋</button></div>`;
         cardsHtml=`<div class="sv-cards sv-cards-edit">${inner}</div>`;
@@ -502,28 +502,16 @@ function svRenameGroup(id,startPos,text){
   s.groups=ng;storeSaved(arr);
 }
 // Draft spread group functions
-// afterPos = last card position of the group we want to add a NEW group after
-// If afterPos < 0, creates first label for all cards
-function spAddGroup(afterPos){
+// Always appends a new empty group at the end
+function spAddGroup(){
   if(!spreadGroups.length){
-    // No groups yet — put all cards in first group, add new empty group after
+    // No groups yet — put all existing cards in first group, then new empty group
     spreadGroups=[{label:'',count:spread.length},{label:'',count:0}];
   } else {
-    // Find which group contains afterPos and insert new empty group after it
+    // Just append a new empty group at the end
     const ng=normalizeGroups(spread,spreadGroups);
-    const result=[];let cursor=0,inserted=false;
-    for(let gi=0;gi<ng.length;gi++){
-      result.push({label:ng[gi].label,count:ng[gi].count});
-      const gStart=cursor;
-      cursor+=ng[gi].count;
-      // afterPos = gStart of this group → insert new group after
-      if(!inserted&&afterPos>=gStart&&(afterPos<cursor||gi===ng.length-1)){
-        result.push({label:'',count:0});
-        inserted=true;
-      }
-    }
-    if(!inserted)result.push({label:'',count:0});
-    spreadGroups=result;
+    ng.push({label:'',count:0});
+    spreadGroups=ng;
   }
   renderSpread();
 }
@@ -684,14 +672,15 @@ function svMoveCard(sid,fromPos,toPos,toGiOverride){
   s.date=Date.now();storeSaved(arr);renderSaved();
 }
 
-// svAddGroup: add a new empty label group after the group containing afterPos
+// svAddGroupNew: always appends a new empty label group at the end
 function svAddGroupNew(id){
   const arr=loadSaved();const s=arr.find(x=>x.id===id);if(!s)return;
   if(!s.groups||!s.groups.length){
     s.groups=[{label:'',count:s.cards.length},{label:'',count:0}];
-    if(!s.cards.length)s.groups=[{label:'',count:0}];
   } else {
-    s.groups=[...normalizeGroups(s.cards,s.groups),{label:'',count:0}];
+    const ng=normalizeGroups(s.cards,s.groups);
+    ng.push({label:'',count:0});
+    s.groups=ng;
   }
   storeSaved(arr);renderSaved();
 }
@@ -706,8 +695,8 @@ function renderSpread(){
   const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
   if(!ng.length){
     // No groups — show add-first-label button, then all cards
-    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup(-1)">＋ Додати мітку</button></div>`;
     html+=spread.map((i,p)=>mkCard(i,p)).join('');
+    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Додати мітку</button></div>`;
   } else {
     for(let gi=0;gi<ng.length;gi++){
       const g=ng[gi];const gStart=cardPos;
@@ -717,9 +706,9 @@ function renderSpread(){
         html+=mkCard(spread[cardPos],cardPos);
         cardPos++;
       }
-      // After each group: "add new label" button
-      html+=`<div class="sp-addlbl-row sp-addlbl-between"><button class="sp-addlbl-btn" onclick="spAddGroup(${gStart})">＋ Нова мітка</button></div>`;
     }
+    // Single "add new label" button at the bottom
+    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
   }
   grid.innerHTML=html;
 }
