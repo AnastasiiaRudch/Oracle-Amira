@@ -46,16 +46,23 @@ function deleteSaved(id){
 function renameSaved(id,name){
   const arr=loadSaved();
   const s=arr.find(x=>x.id===id);
-  if(!s||!name.trim())return;
-  s.name=name.trim();
+  if(!s)return;
+  // Save as-is (with trailing spaces) while typing; trim happens on toggleEditMode
+  s.name=name||s.name;
   storeSaved(arr);
-  // update sv-name text without full re-render to keep focus
-  const el=document.querySelector(`.sv-item[data-id="${id}"] .sv-name-input`);
-  if(el)el.value=s.name;
+}
+
+function finishRename(id){
+  const arr=loadSaved();
+  const s=arr.find(x=>x.id===id);
+  if(!s)return;
+  const trimmed=s.name.trim();
+  if(trimmed){s.name=trimmed;storeSaved(arr);}
 }
 
 function toggleEditMode(id){
-  editingId=(editingId===id)?null:id;
+  if(editingId===id){finishRename(id);editingId=null;}
+  else{editingId=id;}
   renderSaved();
 }
 
@@ -146,6 +153,10 @@ function renderSaved(){
   const list=document.getElementById('saved-list');
   if(!arr.length){empty.style.display='block';list.innerHTML='';return;}
   empty.style.display='none';
+  // Remember cursor position for active input before re-render
+  const activeInput=document.activeElement;
+  const activeId=activeInput&&activeInput.classList.contains('sv-name-input')?activeInput.dataset.id:null;
+  const activeCursor=activeId?activeInput.selectionStart:null;
   list.innerHTML=arr.slice().reverse().map(s=>{
     const d=new Date(s.date);
     const dateStr=d.toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric'});
@@ -183,7 +194,7 @@ function renderSaved(){
         <div class="sv-chevron">${isOpen?'▾':'▸'}</div>
         <div class="sv-info">
           ${isEditing
-            ? `<input class="sv-name-input" value="${s.name.replace(/"/g,'&quot;')}" maxlength="60" oninput="renameSaved('${s.id}',this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">`
+            ? `<input class="sv-name-input" data-id="${s.id}" maxlength="60" oninput="renameSaved('${s.id}',this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onblur="renameSaved('${s.id}',this.value)">`
             : `<div class="sv-name">${s.name}</div>`}
           <div class="sv-meta">${s.cards.length} карт · ${dateStr}</div>
         </div>
@@ -195,6 +206,14 @@ function renderSaved(){
       ${cardsHtml}
     </div>`;
   }).join('');
+  // Set input values via JS to preserve trailing spaces (HTML attribute strips them)
+  arr.forEach(s=>{
+    const inp=list.querySelector(`.sv-name-input[data-id="${s.id}"]`);
+    if(inp){
+      inp.value=s.name;
+      if(s.id===activeId){inp.focus();try{inp.setSelectionRange(activeCursor,activeCursor);}catch(e){}}
+    }
+  });
 }
 
 // Keyboard shortcuts
