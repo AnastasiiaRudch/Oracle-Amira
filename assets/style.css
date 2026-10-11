@@ -109,6 +109,7 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .scard-wrap[draggable]:active,.sv-card-wrap[draggable]:active{cursor:grabbing}
 .scard-wrap.sp-dragging,.sv-card-wrap.sp-dragging{opacity:.3;transform:scale(.95)}
 .scard-wrap.sp-dragover{outline:2px dashed var(--acc);outline-offset:3px;border-radius:6px}
+.scard-wrap.sp-dragover .card-label-input{border-color:var(--acc);background:rgba(201,168,76,.12);border-bottom:none}
 .sv-card-wrap.sv-dragover{outline:2px dashed var(--acc);outline-offset:2px;border-radius:6px}
 .sp-group-droptarget.sp-dragover,.sv-group-droptarget.sv-dragover{background:rgba(201,168,76,.22);border-color:var(--acc);}
 .sp-addlbl-between{padding:2px 0}
