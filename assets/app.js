@@ -263,6 +263,7 @@ function renderSaved(){
             inner+=`<div class="sv-card" onclick="openM(${row.cardIdx})">
               <img src="data:image/jpeg;base64,${c.img}" alt="${c.name}">
               <div class="sv-card-name">${c.name}</div>
+              <div class="sv-card-badge" style="background:${bColor(c.block)}22;color:${bColor(c.block)};border:1px solid ${bColor(c.block)}55">${bLabel(c.block)}</div>
             </div>`;
           }
         }
