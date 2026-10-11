@@ -184,7 +184,7 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sdlg-ok:hover{background:#d4b052}
 
 /* SAVED — RENAME INPUT */
-.sv-name-input{background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.5);color:var(--txt);font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;width:100%;outline:none;padding:1px 0;margin-bottom:2px;transition:border-color .2s}
+.sv-name-input{background:transparent;border:none;border-bottom:1px solid rgba(201,168,76,.5);color:var(--txt);font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;width:100%;outline:none;padding:1px 0;margin-bottom:2px;transition:border-color .2s;user-select:text;-webkit-user-select:text}
 .sv-name-input:focus{border-bottom-color:var(--acc)}
 
 /* SAVED — EDIT MODE */
