@@ -136,6 +136,14 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .btn-save{background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.4);color:var(--acc);border-radius:8px;padding:7px 14px;font-family:'Cinzel',serif;font-size:.66rem;letter-spacing:.05em;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-save:hover{background:rgba(201,168,76,.28)}
 
+/* EDIT MODE BAR */
+.edit-bar{display:flex;align-items:center;gap:10px;padding:8px 20px;background:rgba(201,168,76,.1);border-bottom:1px solid rgba(201,168,76,.25);font-size:.88rem;color:var(--acc)}
+.edit-bar-icon{font-size:1rem}
+.edit-bar span{flex:1}
+.edit-bar strong{color:var(--txt)}
+.edit-bar-cancel{background:none;border:1px solid rgba(201,168,76,.3);color:var(--mut);border-radius:7px;padding:4px 11px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.04em;cursor:pointer;transition:all .2s;white-space:nowrap}
+.edit-bar-cancel:hover{border-color:var(--mut);color:var(--txt)}
+
 /* SAVED PAGE */
 #saved-inner{max-width:960px;margin:0 auto;padding:24px 20px}
 .saved-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
@@ -149,6 +157,9 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sv-name{font-family:'Cinzel',serif;font-size:.92rem;font-weight:600;color:var(--txt);margin-bottom:2px}
 .sv-meta{font-size:.78rem;color:var(--mut)}
 .sv-btn{border-radius:7px;padding:6px 12px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.04em;cursor:pointer;transition:all .2s;border:1px solid var(--bdr);flex-shrink:0}
+.sv-btns{display:flex;gap:7px;flex-shrink:0}
+.sv-edit{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.35);color:var(--acc)}
+.sv-edit:hover{background:rgba(201,168,76,.26)}
 .sv-del{background:rgba(201,77,77,.1);border-color:rgba(201,77,77,.3);color:#e07070}
 .sv-del:hover{background:rgba(201,77,77,.25)}
 /* Accordion card grid */

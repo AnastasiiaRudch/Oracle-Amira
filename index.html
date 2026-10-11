@@ -53,6 +53,11 @@
         <button class="btn-clear" onclick="clearSpread()">🗑&nbsp; Очистити</button>
       </div>
     </div>
+    <div id="edit-bar" class="edit-bar" style="display:none">
+      <span class="edit-bar-icon">✏️</span>
+      <span>Редагування: <strong id="edit-bar-name"></strong></span>
+      <button class="edit-bar-cancel" onclick="cancelEdit()">✕ Скасувати</button>
+    </div>
     <div id="semp" class="sp-empty">
       <div class="s">🌙</div>
       <p>Розклад ще порожній</p>
@@ -80,7 +85,7 @@
 <!-- SAVE DIALOG -->
 <div class="sdlg-ov" id="sdlg-ov">
   <div class="sdlg">
-    <div class="sdlg-title">💾 Зберегти розклад</div>
+    <div class="sdlg-title" id="sdlg-title">💾 Зберегти розклад</div>
     <input type="text" id="sdlg-input" class="sdlg-inp" placeholder="Назва розкладу..." maxlength="60" autocomplete="off">
     <div class="sdlg-btns">
       <button class="sdlg-cancel" onclick="closeSaveDialog()">Скасувати</button>

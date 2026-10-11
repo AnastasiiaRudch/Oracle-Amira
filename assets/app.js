@@ -1,4 +1,4 @@
-let fblock='all', fsearch='', spread=[], mIdx=-1;
+let fblock='all', fsearch='', spread=[], mIdx=-1, editingId=null;
 
 // ── SAVED SPREADS (localStorage) ──────────────────────────────────────────
 const LS_KEY='oracle_saved_spreads';
@@ -7,9 +7,12 @@ function storeSaved(arr){try{localStorage.setItem(LS_KEY,JSON.stringify(arr))}ca
 
 function openSaveDialog(){
   if(!spread.length){alert('Розклад порожній — додайте картки перед збереженням.');return;}
-  document.getElementById('sdlg-input').value='';
+  const inp=document.getElementById('sdlg-input');
+  // Pre-fill with current name if editing
+  inp.value=editingId?(getSavedById(editingId)?.name||''):'';
+  document.getElementById('sdlg-title').textContent=editingId?'✏️ Зберегти зміни':'💾 Зберегти розклад';
   document.getElementById('sdlg-ov').classList.add('on');
-  setTimeout(()=>document.getElementById('sdlg-input').focus(),80);
+  setTimeout(()=>inp.focus(),80);
 }
 function closeSaveDialog(){
   document.getElementById('sdlg-ov').classList.remove('on');
@@ -20,12 +23,19 @@ function confirmSave(){
   if(!name)return;
   const arr=loadSaved();
   const now=Date.now();
-  const id='sp_'+now;
-  arr.push({id,name,cards:spread.slice(),date:now});
+  if(editingId){
+    // Update existing spread in place
+    const idx=arr.findIndex(x=>x.id===editingId);
+    if(idx>=0) arr[idx]={id:editingId,name,cards:spread.slice(),date:now};
+    else arr.push({id:editingId,name,cards:spread.slice(),date:now});
+  } else {
+    arr.push({id:'sp_'+now,name,cards:spread.slice(),date:now});
+  }
   storeSaved(arr);
-  // Clear the working spread after saving
   spread=[];
+  editingId=null;
   updCount();
+  updEditBar();
   renderCatalog();
   renderSpread();
   closeSaveDialog();
@@ -36,7 +46,41 @@ function deleteSaved(id){
   if(!confirm('Видалити цей розклад?'))return;
   const arr=loadSaved().filter(x=>x.id!==id);
   storeSaved(arr);
+  if(editingId===id){editingId=null;spread=[];updCount();updEditBar();renderCatalog();renderSpread();}
   renderSaved();
+}
+function editSaved(id){
+  const s=getSavedById(id);
+  if(!s)return;
+  spread=s.cards.slice();
+  editingId=id;
+  updCount();
+  updEditBar();
+  renderCatalog();
+  renderSpread();
+  // Switch to spread tab
+  document.querySelectorAll('.tnav-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.querySelector('.tnav-btn[data-pg="sp"]').classList.add('active');
+  document.getElementById('sp').classList.add('on');
+}
+function cancelEdit(){
+  spread=[];
+  editingId=null;
+  updCount();
+  updEditBar();
+  renderCatalog();
+  renderSpread();
+}
+function updEditBar(){
+  const bar=document.getElementById('edit-bar');
+  if(editingId){
+    const s=getSavedById(editingId);
+    document.getElementById('edit-bar-name').textContent=s?s.name:'';
+    bar.style.display='flex';
+  } else {
+    bar.style.display='none';
+  }
 }
 let expandedSaved=new Set();
 function toggleSavedExpand(id){
@@ -68,7 +112,10 @@ function renderSaved(){
           <div class="sv-name">${s.name}</div>
           <div class="sv-meta">${s.cards.length} карт · ${dateStr}</div>
         </div>
-        <button class="sv-btn sv-del" onclick="event.stopPropagation();deleteSaved('${s.id}')">🗑</button>
+        <div class="sv-btns" onclick="event.stopPropagation()">
+          <button class="sv-btn sv-edit" onclick="editSaved('${s.id}')">✏️ Редагувати</button>
+          <button class="sv-btn sv-del" onclick="deleteSaved('${s.id}')">🗑</button>
+        </div>
       </div>
       ${cardsHtml}
     </div>`;
