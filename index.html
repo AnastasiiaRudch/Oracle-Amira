@@ -99,7 +99,8 @@
     <div class="cpk-controls">
       <div class="cpk-srch">
         <span class="ico">🔍</span>
-        <input type="text" id="cpk-search" placeholder="Пошук за номером або назвою..." autocomplete="off" oninput="cpkSearch=this.value;renderCardPicker()">
+        <input type="text" id="cpk-search" placeholder="Пошук за номером або назвою..." autocomplete="off" oninput="cpkSearch=this.value;document.getElementById('cpk-clear').style.display=this.value?'block':'none';renderCardPicker()">
+        <button class="srch-clear" id="cpk-clear" style="display:none" onclick="cpkSearch='';document.getElementById('cpk-search').value='';this.style.display='none';renderCardPicker()" title="Очистити">✕</button>
       </div>
       <div class="cpk-filters">
         <button class="cpk-fbtn active" data-b="all" onclick="cpkSetBlock('all')">Всі</button>

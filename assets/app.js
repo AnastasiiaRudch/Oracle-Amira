@@ -43,6 +43,17 @@ function deleteSaved(id){
   renderSaved();
 }
 
+function renameSaved(id,name){
+  const arr=loadSaved();
+  const s=arr.find(x=>x.id===id);
+  if(!s||!name.trim())return;
+  s.name=name.trim();
+  storeSaved(arr);
+  // update sv-name text without full re-render to keep focus
+  const el=document.querySelector(`.sv-item[data-id="${id}"] .sv-name-input`);
+  if(el)el.value=s.name;
+}
+
 function toggleEditMode(id){
   editingId=(editingId===id)?null:id;
   renderSaved();
@@ -67,6 +78,7 @@ function openCardPicker(id,mode,pos){
   document.getElementById('cpk-ov').dataset.pos=pos;
   cpkSearch=''; cpkBlock='all';
   document.getElementById('cpk-search').value='';
+  document.getElementById('cpk-clear').style.display='none';
   document.querySelectorAll('.cpk-fbtn').forEach(b=>b.classList.toggle('active',b.dataset.b==='all'));
   renderCardPicker();
   document.getElementById('cpk-ov').classList.add('on');
@@ -170,7 +182,9 @@ function renderSaved(){
       <div class="sv-top" onclick="toggleSavedExpand('${s.id}')" style="cursor:pointer">
         <div class="sv-chevron">${isOpen?'▾':'▸'}</div>
         <div class="sv-info">
-          <div class="sv-name">${s.name}</div>
+          ${isEditing
+            ? `<input class="sv-name-input" value="${s.name.replace(/"/g,'&quot;')}" maxlength="60" oninput="renameSaved('${s.id}',this.value)" onclick="event.stopPropagation()">`
+            : `<div class="sv-name">${s.name}</div>`}
           <div class="sv-meta">${s.cards.length} карт · ${dateStr}</div>
         </div>
         <div class="sv-btns" onclick="event.stopPropagation()">
