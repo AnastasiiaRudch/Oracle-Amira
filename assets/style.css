@@ -22,6 +22,9 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 #search{width:100%;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;color:var(--txt);font-family:'Crimson Pro',serif;font-size:1rem;padding:8px 12px 8px 34px;outline:none;transition:border-color .2s,box-shadow .2s}
 #search:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
 #search::placeholder{color:var(--mut)}
+.srch-clear{display:none;position:absolute;right:9px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mut);font-size:.85rem;cursor:pointer;padding:3px 5px;border-radius:4px;line-height:1;transition:color .15s,background .15s}
+.srch-clear:hover{color:var(--txt);background:rgba(255,255,255,.08)}
+.srch-clear.vis{display:block}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .fbtn{border:1px solid var(--bdr);background:var(--surf);color:var(--mut);border-radius:20px;padding:5px 13px;font-family:'Cinzel',serif;font-size:.67rem;letter-spacing:.05em;cursor:pointer;transition:all .2s}
 .fbtn:hover{border-color:var(--acc);color:var(--acc)}

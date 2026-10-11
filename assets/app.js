@@ -169,8 +169,17 @@ document.getElementById('mov').addEventListener('click',e=>{if(e.target===docume
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM();});
 document.getElementById('madd').addEventListener('click',()=>{if(mIdx>=0)toggleS(mIdx);});
 
+function clearSearch(){
+  const inp=document.getElementById('search');
+  inp.value=''; fsearch='';
+  document.getElementById('srch-clear').classList.remove('vis');
+  renderCatalog();
+  inp.focus();
+}
+
 document.getElementById('search').addEventListener('input',e=>{
   fsearch=e.target.value;
+  document.getElementById('srch-clear').classList.toggle('vis', e.target.value.length>0);
   if(/^\d+$/.test(e.target.value.trim())){
     fblock='all';
     document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
