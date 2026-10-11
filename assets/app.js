@@ -179,7 +179,7 @@ function renderSaved(){
       }
     }
     return `<div class="sv-item${isEditing?' sv-editing':''}" data-id="${s.id}">
-      <div class="sv-top" onclick="toggleSavedExpand('${s.id}')" style="cursor:pointer">
+      <div class="sv-top" ${isEditing?'':'onclick="toggleSavedExpand(\''+s.id+'\')" style="cursor:pointer"'}>
         <div class="sv-chevron">${isOpen?'▾':'▸'}</div>
         <div class="sv-info">
           ${isEditing
