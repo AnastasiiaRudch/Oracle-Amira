@@ -198,7 +198,9 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sv-card-badge{font-size:.5rem;text-align:center;padding:2px 5px 3px;margin:0 4px 4px;border-radius:4px;letter-spacing:.04em;font-weight:600;text-transform:uppercase}
 
 /* CARD WRAP (label above card) */
-.sv-card-wrap,.scard-wrap{position:relative;margin-top:28px}
+.sv-card-wrap,.scard-wrap{position:relative}
+.sv-card-wrap{margin-top:28px}
+#sgrid .scard-wrap{margin-top:28px}
 .card-label-input{position:absolute;bottom:100%;left:0;right:0;margin-bottom:0;background:rgba(255,255,255,.05);border:1px solid rgba(201,168,76,.25);border-bottom:none;color:var(--acc);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.04em;text-align:center;padding:4px 6px;border-radius:6px 6px 0 0;outline:none;transition:border-color .15s;width:100%;box-sizing:border-box}
 .card-label-input:focus{border-color:rgba(201,168,76,.7);background:rgba(201,168,76,.08)}
 .card-label-input::placeholder{color:rgba(201,168,76,.3);font-size:.52rem}
