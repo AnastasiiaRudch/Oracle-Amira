@@ -751,23 +751,19 @@ function renderSpread(){
   const ng=normalizeGroups(spread,spreadGroups);
   let html='';let cardPos=0;
   const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
-  const mkAddCard=(onclick)=>`<div class="sp-add-card-tile" onclick="${onclick}"><span>＋</span></div>`;
   if(!ng.length){
-    // No groups — cards + inline + tile + new-label button
+    // No groups — cards then a small add button row
     html+=spread.map((i,p)=>mkCard(i,p)).join('');
-    html+=mkAddCard('spOpenPickerForGroup(-1)');
-    html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
+    html+=`<div class="sp-addlbl-row"><button class="sp-addcard-btn-ungrouped" onclick="spOpenPickerForGroup(-1)">＋ Додати картку</button><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
   } else {
     for(let gi=0;gi<ng.length;gi++){
       const g=ng[gi];const gStart=cardPos;
-      // Group header — also a drop target (shown even if count=0 so user can type label name)
-      html+=`<div class="sp-group-row"><div class="sp-group-label-wrap sp-group-droptarget" ondragover="spDragOver(event,${cardPos})" ondragleave="spDragLeave(event)" ondrop="spDropGroup(event,${gi})"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
+      // Group header with embedded + button (right side), also a drop target
+      html+=`<div class="sp-group-row"><div class="sp-group-label-wrap sp-group-droptarget" ondragover="spDragOver(event,${cardPos})" ondragleave="spDragLeave(event)" ondrop="spDropGroup(event,${gi})"><input class="sp-group-input" data-start="${gStart}" maxlength="80" oninput="spRenameGroup(${gStart},this.value)" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" placeholder="Назва мітки..." value="${(g.label||'').replace(/"/g,'&quot;')}"><button class="sp-group-addcard-icon" title="Додати картку" onclick="event.stopPropagation();spOpenPickerForGroup(${gi})">＋</button><button class="sp-group-del" onclick="spRemoveGroup(${gStart})">✕</button></div></div>`;
       for(let j=0;j<g.count;j++){
         html+=mkCard(spread[cardPos],cardPos);
         cardPos++;
       }
-      // Inline + tile after last card of this group
-      html+=mkAddCard(`spOpenPickerForGroup(${gi})`);
     }
     // "New label" button at the bottom
     html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
