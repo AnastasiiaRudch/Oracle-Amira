@@ -97,12 +97,9 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sp-addlbl-row{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0}
 .sp-addlbl-btn{background:rgba(201,168,76,.06);border:1px dashed rgba(201,168,76,.3);color:rgba(201,168,76,.6);border-radius:7px;padding:5px 18px;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.05em;cursor:pointer;transition:all .18s}
 .sp-addlbl-btn:hover{background:rgba(201,168,76,.16);border-color:var(--acc);color:var(--acc)}
-.sp-group-addcard{grid-column:1/-1;padding:4px 0 8px}
-.sp-group-addcard-btn{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);color:var(--mut);border-radius:6px;padding:4px 14px;font-family:'Crimson Pro',serif;font-size:.85rem;cursor:pointer;transition:all .18s;width:100%;text-align:center}
-.sp-group-addcard-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.25);color:var(--txt)}
-.sv-group-addcard{grid-column:1/-1;padding:4px 0 8px}
-.sv-group-addcard-btn{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);color:var(--mut);border-radius:6px;padding:4px 14px;font-family:'Crimson Pro',serif;font-size:.85rem;cursor:pointer;transition:all .18s;width:100%;text-align:center}
-.sv-group-addcard-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.25);color:var(--txt)}
+/* Inline + tile — same look as card placeholder, sits next to last card in group */
+.sp-add-card-tile,.sv-add-card-tile{aspect-ratio:3/5;border-radius:10px;border:2px dashed rgba(201,168,76,.35);background:rgba(201,168,76,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;color:rgba(201,168,76,.5);font-size:1.8rem;min-width:80px}
+.sp-add-card-tile:hover,.sv-add-card-tile:hover{border-color:var(--acc);background:rgba(201,168,76,.13);color:var(--acc)}
 /* Drag and drop */
 .scard[draggable],.sv-card-edit[draggable]{cursor:grab}
 .scard[draggable]:active,.sv-card-edit[draggable]:active{cursor:grabbing}
@@ -226,8 +223,7 @@ header p{color:var(--mut);font-size:1.05rem;font-style:italic}
 .sv-ca-sw:hover{background:rgba(201,168,76,.4);border-color:var(--acc);color:#0d0b14}
 .sv-ca-sp:hover{background:rgba(77,139,201,.4);border-color:var(--len);color:#fff}
 .sv-add-tile{display:flex;align-items:center;justify-content:center;aspect-ratio:3/5;border-radius:8px}
-.sv-add-btn{background:rgba(201,168,76,.08);border:2px dashed rgba(201,168,76,.4);color:var(--acc);border-radius:8px;width:100%;height:100%;font-size:1.6rem;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;min-height:60px}
-.sv-add-btn:hover{background:rgba(201,168,76,.2);border-color:var(--acc)}
+.sv-add-card-tile{aspect-ratio:3/5;border-radius:10px}
 
 /* GROUP LABELS in saved spreads */
 .sv-group-label{grid-column:1/-1;font-family:'Cinzel',serif;font-size:.78rem;font-weight:600;color:var(--acc);letter-spacing:.06em;padding:10px 4px 4px;border-top:1px solid rgba(201,168,76,.2);margin-top:4px;opacity:.9}

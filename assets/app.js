@@ -162,14 +162,13 @@ function pickCard(cardIdx){
     const toGi=parseInt(ov.dataset.gi);
     const ng=normalizeGroups(spread,spreadGroups);
     spread.push(cardIdx);
-    if(!ng.length){
-      spreadGroups=[{label:'',count:1}];
-    } else {
-      // Add card to the specified group
+    if(ng.length){
+      // Add card to the specified group (or last group if gi=-1)
       if(toGi>=0&&toGi<ng.length){ng[toGi].count++;}
       else{ng[ng.length-1].count++;}
       spreadGroups=ng;
     }
+    // If no groups, spreadGroups stays [] — card added ungrouped
     updCount();renderCatalog();closeCardPicker();renderSpread();
     return;
   }
@@ -230,9 +229,11 @@ function renderSaved(){
         const ng=normalizeGroups(s.cards,s.groups||[]);
         let inner='';let cardPos=0;
         const mkSvCard=(ci,p)=>{const c=CARDS[ci];return `<div class="sv-card sv-card-edit" draggable="true" ondragstart="svDragStart(event,'${s.id}',${p})" ondragend="svDragEnd(event)" ondragover="svDragOver(event)" ondragleave="svDragLeave(event)" ondrop="svDrop(event,'${s.id}',${p})"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"><div class="sv-card-name">${c.name}</div><div class="sv-card-actions"><button class="sv-ca-rm" title="Видалити" onclick="svRemoveCard('${s.id}',${p})">✕</button><button class="sv-ca-sw" title="Замінити" onclick="openCardPicker('${s.id}','replace',${p})">⇄</button></div></div>`;};
+        const mkSvAddTile=(sid,gi)=>`<div class="sv-add-card-tile" onclick="openCardPicker('${sid}','add-to-group',-1);document.getElementById('cpk-ov').dataset.gi='${gi}'"><span>＋</span></div>`;
         if(!ng.length){
-          // No groups — show all cards, then add-label button at bottom
+          // No groups — cards + inline + tile + new-label button
           inner+=s.cards.map((ci,p)=>mkSvCard(ci,p)).join('');
+          inner+=mkSvAddTile(s.id,-1);
           inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
         } else {
           for(let gi=0;gi<ng.length;gi++){
@@ -243,14 +244,12 @@ function renderSaved(){
               inner+=mkSvCard(s.cards[cardPos],cardPos);
               cardPos++;
             }
-            // Add-card button per group
-            inner+=`<div class="sv-group-addcard"><button class="sv-group-addcard-btn" onclick="openCardPicker('${s.id}','add-to-group',${cardPos});document.getElementById('cpk-ov').dataset.gi='${gi}'">＋ Додати картку</button></div>`;
+            // Inline + tile after last card of this group
+            inner+=mkSvAddTile(s.id,gi);
           }
           // "New label" button at the bottom
           inner+=`<div class="sv-add-label-tile"><button class="sv-add-label-btn" onclick="svAddGroupNew('${s.id}')">＋ Нова мітка</button></div>`;
         }
-        // Add card button (no groups) — only when no groups
-        if(!ng.length)inner+=`<div class="sv-add-tile"><button class="sv-add-btn" onclick="openCardPicker('${s.id}','add',${s.cards.length})">＋</button></div>`;
         cardsHtml=`<div class="sv-cards sv-cards-edit">${inner}</div>`;
       } else {
         // View mode: render with group headers
@@ -752,9 +751,11 @@ function renderSpread(){
   const ng=normalizeGroups(spread,spreadGroups);
   let html='';let cardPos=0;
   const mkCard=(i,pos)=>{const c=CARDS[i];const bc=bColor(c.block);return `<div class="scard" draggable="true" ondragstart="spDragStart(event,${pos})" ondragend="spDragEnd(event)" ondragover="spDragOver(event,${pos})" ondragleave="spDragLeave(event)" ondrop="spDrop(event,${pos})" onclick="openM(${i})"><div class="scard-img"><img src="data:image/jpeg;base64,${c.img}" alt="${c.name}"></div><div class="scard-body"><div class="scard-num">№${c.num} · ${bLabel(c.block)}</div><div class="scard-name">${c.name}</div><div class="scard-badge" style="background:${bc}22;color:${bc};border:1px solid ${bc}44">${bLabel(c.block)}</div><div class="scard-desc formatted">${formatDesc(c.desc)}</div></div><button class="scard-rm" onclick="event.stopPropagation();removeS(${i})">✕ Видалити</button></div>`;};
+  const mkAddCard=(onclick)=>`<div class="sp-add-card-tile" onclick="${onclick}"><span>＋</span></div>`;
   if(!ng.length){
-    // No groups — show all cards then single add-label button
+    // No groups — cards + inline + tile + new-label button
     html+=spread.map((i,p)=>mkCard(i,p)).join('');
+    html+=mkAddCard('spOpenPickerForGroup(-1)');
     html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
   } else {
     for(let gi=0;gi<ng.length;gi++){
@@ -765,8 +766,8 @@ function renderSpread(){
         html+=mkCard(spread[cardPos],cardPos);
         cardPos++;
       }
-      // Add-card button per group
-      html+=`<div class="sp-group-addcard"><button class="sp-group-addcard-btn" onclick="spOpenPickerForGroup(${gi})">＋ Додати картку</button></div>`;
+      // Inline + tile after last card of this group
+      html+=mkAddCard(`spOpenPickerForGroup(${gi})`);
     }
     // "New label" button at the bottom
     html+=`<div class="sp-addlbl-row"><button class="sp-addlbl-btn" onclick="spAddGroup()">＋ Нова мітка</button></div>`;
